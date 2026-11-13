@@ -576,4 +576,144 @@ public class GameManagerTests
         Assert.AreEqual(2f, gm.LastGameResult.BestTime, 1e-6f);
         Assert.AreEqual(2, results.Count);
     }
+
+    // ---------- Stage 7: 사망 애니메이션 완료 후 결과 전달 ----------
+
+    /// <summary>Player/Visual에 PlayerAnimationController를 붙인다. GameManager는 StartGame에서 자동으로 찾는다.</summary>
+    private PlayerAnimationController AddAnimationController()
+    {
+        var visual = new GameObject("Visual");
+        visual.transform.SetParent(playerGo.transform, false);
+        return visual.AddComponent<PlayerAnimationController>();
+    }
+
+    [Test]
+    public void WithoutAnimationController_ResultPublishedImmediately()
+    {
+        gm.StartGame();
+        Frame(1f);
+        HitPlayer();
+        Assert.AreEqual(1, results.Count);
+        Assert.IsTrue(gm.IsGameResultPublished);
+        Assert.IsFalse(gm.IsWaitingForDeathAnimation);
+    }
+
+    [Test]
+    public void WithAnimationController_RecordSavedImmediately_ResultAfterDeathFinished()
+    {
+        PlayerAnimationController anim = AddAnimationController();
+        gm.StartGame();
+        Frame(2f);
+        HitPlayer();
+
+        // 기록/결과는 게임 오버 즉시 확정
+        Assert.AreEqual(GameState.GameOver, gm.CurrentState);
+        Assert.IsTrue(gm.HasGameResult);
+        Assert.AreEqual(2f, RecordStore.GetBestTime(), 1e-6f, "기록은 사망 연출 전에 저장");
+        Assert.IsTrue(gm.LastGameResult.IsNewRecord);
+        // 결과 전달은 사망 애니메이션 종료까지 대기
+        Assert.AreEqual(0, results.Count);
+        Assert.IsTrue(gm.IsWaitingForDeathAnimation);
+
+        anim.Tick(Dt); // Death 진입 → (EditMode: 재생 불가) 즉시 완료 → OnDeathFinished
+        Assert.AreEqual(PlayerAnimationController.AnimState.Death, anim.CurrentState);
+        Assert.AreEqual(1, results.Count);
+        Assert.AreEqual(gm.LastGameResult.SurvivalTime, results[0].SurvivalTime);
+        Assert.IsFalse(gm.IsWaitingForDeathAnimation);
+
+        for (int i = 0; i < 50; i++) anim.Tick(Dt);
+        anim.NotifyDeathAnimationFinished();
+        gm.TickResultWait(10f);
+        Assert.AreEqual(1, results.Count, "결과는 한 번만");
+    }
+
+    [Test]
+    public void DeathFinishedNeverArrives_TimeoutPublishes()
+    {
+        AddAnimationController(); // Tick하지 않음 → 완료 신호 없음
+        gm.StartGame();
+        HitPlayer();
+        Assert.AreEqual(0, results.Count);
+
+        gm.TickResultWait(2.9f);
+        Assert.AreEqual(0, results.Count);
+        gm.TickResultWait(0.2f); // 기본 3초
+        Assert.AreEqual(1, results.Count, "무한 대기 없음");
+        gm.TickResultWait(5f);
+        Assert.AreEqual(1, results.Count);
+    }
+
+    [Test]
+    public void DisabledAnimationController_ResultPublishedImmediately()
+    {
+        PlayerAnimationController anim = AddAnimationController();
+        anim.enabled = false;
+        gm.StartGame();
+        HitPlayer();
+        Assert.AreEqual(1, results.Count);
+    }
+
+    [Test]
+    public void AnimationControllerRemovedWhileWaiting_PublishesOnNextTick()
+    {
+        PlayerAnimationController anim = AddAnimationController();
+        gm.StartGame();
+        HitPlayer();
+        Assert.AreEqual(0, results.Count);
+
+        Object.DestroyImmediate(anim.gameObject);
+        gm.TickResultWait(Dt);
+        Assert.AreEqual(1, results.Count);
+    }
+
+    [Test]
+    public void ResultEvent_OrderAndContent_WithDeathAnimation()
+    {
+        PlayerAnimationController anim = AddAnimationController();
+        var order = new List<string>();
+        gm.OnGameStateChanged += s => order.Add("state:" + s);
+        gm.OnGameResultReady += r =>
+        {
+            order.Add("result");
+            Assert.AreEqual(r.BestTime, RecordStore.GetBestTime(), "결과 전달 시점에 기록은 이미 저장됨");
+        };
+        anim.OnDeathFinished += () => order.Add("deathFinished");
+
+        gm.StartGame();
+        Frame(1.5f);
+        HitPlayer();
+        anim.Tick(Dt);
+
+        CollectionAssert.AreEqual(new[] { "state:Playing", "state:GameOver", "deathFinished", "result" }, order);
+    }
+
+    [Test]
+    public void RestartWhileWaitingForDeath_OldDeathDoesNotAffectNewGame()
+    {
+        PlayerAnimationController anim = AddAnimationController();
+        gm.StartGame();
+        Frame(2f);
+        HitPlayer();
+        Assert.IsTrue(gm.IsWaitingForDeathAnimation);
+
+        foreach (Missile m in new List<Missile>(spawner.ActiveMissiles)) m.Despawn();
+        gm.StartGame(); // 사망 연출 도중 재시작
+        Assert.IsFalse(gm.IsWaitingForDeathAnimation);
+        Assert.IsFalse(gm.HasGameResult);
+
+        anim.Tick(Dt);
+        Assert.AreEqual("IdleSouth", anim.CurrentStateName, "새 게임은 IdleSouth부터");
+        anim.NotifyDeathAnimationFinished();
+        gm.TickResultWait(10f);
+        Assert.AreEqual(0, results.Count, "이전 사망의 완료 신호/타임아웃이 새 게임에 결과를 보내지 않음");
+        Assert.AreEqual(GameState.Playing, gm.CurrentState);
+        Assert.AreEqual(2f, RecordStore.GetBestTime(), 1e-6f, "기록 유지");
+
+        Frame(1f);
+        HitPlayer();
+        anim.Tick(Dt);
+        Assert.AreEqual(1, results.Count);
+        Assert.AreEqual(1f, results[0].SurvivalTime, 1e-6f);
+        Assert.IsFalse(results[0].IsNewRecord);
+    }
 }

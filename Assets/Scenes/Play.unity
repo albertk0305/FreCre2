@@ -183,7 +183,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &56649419
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -846,6 +846,8 @@ MonoBehaviour:
   missileSpawner: {fileID: 1719845222}
   survivalTimer: {fileID: 619571206}
   inputRouter: {fileID: 1690652015}
+  playerAnimation: {fileID: 1916242255}
+  deathResultTimeout: 3
   startGameOnStart: 1
 --- !u!4 &619571205
 Transform:
@@ -2695,6 +2697,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1916242252}
   - component: {fileID: 1916242253}
+  - component: {fileID: 1916242254}
+  - component: {fileID: 1916242255}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -2776,6 +2780,46 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!95 &1916242254
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1916242251}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 6bf2c1ebcac1c46479c8f6c9037997aa, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1916242255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1916242251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e1bdf83501923346a462593d430b354, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::PlayerAnimationController
+  playerController: {fileID: 1690652016}
+  animator: {fileID: 1916242254}
+  runThreshold: 0.01
+  jumpVelocityThreshold: 0.001
+  directionHysteresis: 5
+  deathFallbackDuration: 2
 --- !u!1 &2076444642
 GameObject:
   m_ObjectHideFlags: 0

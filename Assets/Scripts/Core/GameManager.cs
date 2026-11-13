@@ -6,11 +6,13 @@ using UnityEngine;
 /// - 시작: 피격 상태 초기화 → 플레이어 조작 활성화 → 생존시간 초기화/측정 시작 → 미사일 생성 시작 → Playing 전환 → 이벤트
 /// - 피격: PlayerHitDetector.OnPlayerHit 수신 → EndGame()
 /// - 종료: GameOver 전환 → 생존시간 정지 → 플레이어 사망(이동/점프 중단) → 입력 차단 → 생성 중지 → 미사일 정지
-///         → 최종 생존시간으로 RecordStore.TryUpdateRecord → GameResult 생성 → OnGameStateChanged → OnGameResultReady
+///         → 최종 생존시간으로 RecordStore.TryUpdateRecord → GameResult 생성(즉시 확정) → OnGameStateChanged
+///         → (Stage 7) PlayerAnimationController.OnDeathFinished 대기 → OnGameResultReady
+/// - 사망 애니메이션 컨트롤러가 없거나 비활성이면 OnGameResultReady를 즉시 보낸다.
+///   완료 신호가 오지 않아도 deathResultTimeout 후에는 반드시 보낸다(무한 대기 방지).
 /// - 기록 저장은 게임 오버(미사일 피격)에서만 한다. Exit/Restart 버튼의 씬 전환은 EndGame()을 거치지 않으므로 기록되지 않는다.
+///   기록은 EndGame()에서 즉시 저장되므로 사망 연출 도중 씬을 나가도 기록은 유지된다.
 /// Time.timeScale은 변경하지 않는다.
-/// Stage 7/9 확장 지점: Death 애니메이션 완료 후 결과 UI를 띄우려면 PublishGameResult() 호출 시점만 늦추면 된다
-/// (기록은 이미 EndGame()에서 확정 저장되므로 연출 도중 씬을 나가도 기록은 유지된다).
 /// </summary>
 [DisallowMultipleComponent]
 public class GameManager : MonoBehaviour
@@ -23,12 +25,20 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SurvivalTimer survivalTimer;
     [Tooltip("게임 오버 시 입력을 차단할 라우터. 비우면 PlayerController와 같은 오브젝트에서 찾는다.")]
     [SerializeField] private PlayerInputRouter inputRouter;
+    [Tooltip("사망 애니메이션 완료(OnDeathFinished) 후 결과를 전달한다. 비우면 PlayerController 자식에서 찾고, 없으면 결과를 즉시 전달.")]
+    [SerializeField] private PlayerAnimationController playerAnimation;
+
+    [Header("Game Over")]
+    [Tooltip("사망 애니메이션 완료 신호를 기다리는 최대 시간(초). 지나면 결과를 강제로 전달한다.")]
+    [Min(0f)] [SerializeField] private float deathResultTimeout = 3f;
 
     [Header("Start")]
     [Tooltip("시작 UI가 없는 Stage 4에서는 씬 시작 시 자동으로 게임을 시작한다.")]
     [SerializeField] private bool startGameOnStart = true;
 
     private bool hitSubscribed;
+    private bool deathSubscribed;
+    private float resultWaitElapsed;
 
     public GameState CurrentState { get; private set; } = GameState.Ready;
 
@@ -41,10 +51,19 @@ public class GameManager : MonoBehaviour
     /// <summary>이번 판의 게임 오버 결과가 확정되었는지. StartGame()에서 false로 초기화.</summary>
     public bool HasGameResult { get; private set; }
 
+    /// <summary>이번 판의 OnGameResultReady를 이미 보냈는지.</summary>
+    public bool IsGameResultPublished { get; private set; }
+
+    /// <summary>결과는 확정되었고 사망 애니메이션 완료를 기다리는 중인지.</summary>
+    public bool IsWaitingForDeathAnimation { get; private set; }
+
     /// <summary>GameState가 바뀔 때마다 새 상태로 발생한다.</summary>
     public event Action<GameState> OnGameStateChanged;
 
-    /// <summary>게임 오버 결과(생존시간/최고기록/신기록 여부)가 준비되면 한 번 발생한다. Stage 9 GameOverUI용.</summary>
+    /// <summary>
+    /// 게임 오버 결과(생존시간/최고기록/신기록 여부)를 사망 애니메이션 종료 후 한 번 전달한다. Stage 9 GameOverUI용.
+    /// 기록 저장은 이보다 먼저(게임 오버 즉시) 끝나 있다.
+    /// </summary>
     public event Action<GameResult> OnGameResultReady;
 
     private void Awake()
@@ -63,11 +82,18 @@ public class GameManager : MonoBehaviour
     private void OnEnable()
     {
         SubscribeHit();
+        SubscribeDeath();
     }
 
     private void OnDisable()
     {
         UnsubscribeHit();
+        UnsubscribeDeath();
+    }
+
+    private void Update()
+    {
+        TickResultWait(Time.deltaTime);
     }
 
     private void Start()
@@ -88,9 +114,12 @@ public class GameManager : MonoBehaviour
 
         ResolveReferences();
         SubscribeHit();
+        SubscribeDeath();
         LastHitMissile = null;
         LastGameResult = default;
         HasGameResult = false;
+        IsGameResultPublished = false;
+        IsWaitingForDeathAnimation = false; // 이전 판의 사망 대기/완료 신호가 새 게임에 영향을 주지 않음
 
         if (playerHitDetector != null)
         {
@@ -175,8 +204,56 @@ public class GameManager : MonoBehaviour
 
         OnGameStateChanged?.Invoke(CurrentState);
 
-        // Stage 7: 사망 애니메이션 완료 이벤트가 생기면 그 시점에 호출하도록 옮긴다. 지금은 대기 없이 즉시 전달한다.
-        PublishGameResult();
+        // 사망 애니메이션이 있으면 끝난 뒤(OnDeathFinished) 결과를 전달하고, 없으면 즉시 전달한다.
+        if (CanWaitForDeathAnimation())
+        {
+            IsWaitingForDeathAnimation = true;
+            resultWaitElapsed = 0f;
+        }
+        else
+        {
+            PublishGameResult();
+        }
+    }
+
+    /// <summary>
+    /// 결과 대기 보호 장치. 사망 애니메이션 컨트롤러가 사라졌거나 꺼졌으면 즉시, 완료 신호가 없으면 deathResultTimeout 후 전달한다.
+    /// Update에서 호출되며 테스트에서 직접 호출할 수 있다.
+    /// </summary>
+    public void TickResultWait(float deltaTime)
+    {
+        if (!IsWaitingForDeathAnimation)
+        {
+            return;
+        }
+
+        if (!CanWaitForDeathAnimation())
+        {
+            PublishGameResult();
+            return;
+        }
+
+        resultWaitElapsed += Mathf.Max(0f, deltaTime);
+        if (resultWaitElapsed >= deathResultTimeout)
+        {
+            Debug.LogWarning($"{name}: 사망 애니메이션 완료 신호가 {deathResultTimeout:0.##}초 동안 없어 게임 결과를 전달합니다.", this);
+            PublishGameResult();
+        }
+    }
+
+    /// <summary>PlayerAnimationController.OnDeathFinished 핸들러. 이번 판의 결과를 기다리는 중일 때만 전달한다.</summary>
+    private void HandleDeathFinished()
+    {
+        if (IsWaitingForDeathAnimation && CurrentState == GameState.GameOver)
+        {
+            PublishGameResult();
+        }
+    }
+
+    private bool CanWaitForDeathAnimation()
+    {
+        // isActiveAndEnabled는 OnEnable 이전(EditMode 등)에 false이므로 enabled/activeInHierarchy로 판단한다.
+        return playerAnimation != null && playerAnimation.enabled && playerAnimation.gameObject.activeInHierarchy && deathSubscribed;
     }
 
     /// <summary>최종 생존시간으로 최고기록 갱신을 시도하고 GameResult를 만든다.</summary>
@@ -188,10 +265,13 @@ public class GameManager : MonoBehaviour
 
     private void PublishGameResult()
     {
-        if (HasGameResult)
+        IsWaitingForDeathAnimation = false;
+        if (!HasGameResult || IsGameResultPublished)
         {
-            OnGameResultReady?.Invoke(LastGameResult);
+            return; // 한 판에 한 번만
         }
+        IsGameResultPublished = true;
+        OnGameResultReady?.Invoke(LastGameResult);
     }
 
     private void SetState(GameState state)
@@ -227,11 +307,38 @@ public class GameManager : MonoBehaviour
         hitSubscribed = false;
     }
 
+    private void SubscribeDeath()
+    {
+        if (deathSubscribed || playerAnimation == null)
+        {
+            return;
+        }
+        playerAnimation.OnDeathFinished += HandleDeathFinished;
+        deathSubscribed = true;
+    }
+
+    private void UnsubscribeDeath()
+    {
+        if (!deathSubscribed)
+        {
+            return;
+        }
+        if (playerAnimation != null)
+        {
+            playerAnimation.OnDeathFinished -= HandleDeathFinished;
+        }
+        deathSubscribed = false;
+    }
+
     private void ResolveReferences()
     {
         if (inputRouter == null && playerController != null)
         {
             inputRouter = playerController.GetComponent<PlayerInputRouter>();
+        }
+        if (playerAnimation == null && playerController != null)
+        {
+            playerAnimation = playerController.GetComponentInChildren<PlayerAnimationController>(true);
         }
     }
 }

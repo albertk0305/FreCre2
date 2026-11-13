@@ -175,6 +175,11 @@ public class SceneNavigationPlayModeTests
         float survived = Find<SurvivalTimer>().ElapsedTime;
 
         Assert.AreEqual(GameState.GameOver, gm.CurrentState);
+        Assert.AreEqual(survived, RecordStore.GetBestTime(), "기록은 게임 오버 즉시 저장");
+
+        // Stage 7: PlayerAnimationController가 있으면 OnGameResultReady는 사망 애니메이션 종료 후(최대 3초) 발생한다.
+        float waitStart = Time.time;
+        while (results.Count == 0 && Time.time - waitStart < 4f) yield return null;
         Assert.AreEqual(1, results.Count);
         Assert.AreEqual(survived, results[0].SurvivalTime);
         Assert.AreEqual(survived, results[0].BestTime);
