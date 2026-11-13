@@ -23,10 +23,16 @@ public class GameManagerTests
     private GameManager gm;
     private readonly List<GameState> events = new List<GameState>();
     private Random.State savedRandom;
+    private BestTimeBackup bestTimeBackup;
+    private readonly List<GameResult> results = new List<GameResult>();
 
     [SetUp]
     public void SetUp()
     {
+        // Stage 6: 게임 오버 시 최고기록을 저장하므로 실제 기록을 백업하고 빈 상태에서 시작한다.
+        bestTimeBackup = BestTimeBackup.Capture();
+        BestTimeBackup.ClearForTest();
+
         savedRandom = Random.state;
         Random.InitState(777);
 
@@ -80,12 +86,14 @@ public class GameManagerTests
 
         events.Clear();
         gm.OnGameStateChanged += s => events.Add(s);
+        results.Clear();
+        gm.OnGameResultReady += r => results.Add(r);
     }
 
     [TearDown]
     public void TearDown()
     {
-        Object.DestroyImmediate(managerGo);
+        if (managerGo != null) Object.DestroyImmediate(managerGo);
         Object.DestroyImmediate(spawnerGo);
         Object.DestroyImmediate(systemsGo);
         Object.DestroyImmediate(templateGo);
@@ -93,6 +101,7 @@ public class GameManagerTests
         Object.DestroyImmediate(cameraGo);
         Object.DestroyImmediate(arenaGo);
         Random.state = savedRandom;
+        bestTimeBackup.Restore();
     }
 
     private static void SetRef(Object target, string field, Object value)
@@ -426,5 +435,145 @@ public class GameManagerTests
         Assert.AreEqual(1, spawner.ActiveMissileCount);
         HitPlayer();
         Assert.AreEqual(GameState.GameOver, gm.CurrentState);
+    }
+
+    // ---------- Stage 6: 최고기록 / GameResult ----------
+
+    [Test]
+    public void MissileHitGameOver_SavesRecord_AndBuildsResult()
+    {
+        gm.StartGame();
+        Frame(2f);
+        Assert.IsFalse(gm.HasGameResult);
+        HitPlayer();
+
+        Assert.IsTrue(gm.HasGameResult);
+        GameResult r = gm.LastGameResult;
+        Assert.AreEqual(2f, r.SurvivalTime, 1e-6f);
+        Assert.AreEqual(timer.ElapsedTime, r.SurvivalTime, "최종 생존시간 = SurvivalTimer.ElapsedTime");
+        Assert.AreEqual(2f, r.BestTime, 1e-6f);
+        Assert.IsTrue(r.IsNewRecord);
+        Assert.AreEqual(2f, RecordStore.GetBestTime(), 1e-6f, "PlayerPrefs에 저장됨");
+    }
+
+    [Test]
+    public void LowerThanBest_NotNewRecord_BestKept()
+    {
+        RecordStore.TryUpdateRecord(100f);
+        gm.StartGame();
+        Frame(2f);
+        HitPlayer();
+
+        GameResult r = gm.LastGameResult;
+        Assert.AreEqual(2f, r.SurvivalTime, 1e-6f);
+        Assert.AreEqual(100f, r.BestTime);
+        Assert.IsFalse(r.IsNewRecord);
+        Assert.AreEqual(100f, RecordStore.GetBestTime());
+    }
+
+    [Test]
+    public void EqualToBest_NotNewRecord()
+    {
+        RecordStore.TryUpdateRecord(2f);
+        gm.StartGame();
+        Frame(2f); // ElapsedTime == 2f 정확히
+        HitPlayer();
+
+        Assert.AreEqual(2f, gm.LastGameResult.SurvivalTime);
+        Assert.AreEqual(2f, gm.LastGameResult.BestTime);
+        Assert.IsFalse(gm.LastGameResult.IsNewRecord);
+    }
+
+    [Test]
+    public void HigherThanBest_NewRecord_BestUpdated()
+    {
+        RecordStore.TryUpdateRecord(1.5f);
+        gm.StartGame();
+        Frame(2f);
+        HitPlayer();
+
+        Assert.IsTrue(gm.LastGameResult.IsNewRecord);
+        Assert.AreEqual(2f, gm.LastGameResult.BestTime, 1e-6f);
+        Assert.AreEqual(2f, RecordStore.GetBestTime(), 1e-6f);
+    }
+
+    [Test]
+    public void DuplicateHits_RecordAndResultProcessedOnce()
+    {
+        gm.StartGame();
+        Frame(2f);
+        HitPlayer();
+        GameResult first = gm.LastGameResult;
+
+        // 기록을 지워 두면, 기록 처리가 다시 일어날 경우 2초가 다시 저장되어 드러난다.
+        BestTimeBackup.ClearForTest();
+        Missile other = spawner.SpawnMissile();
+        gm.HandlePlayerHit(other);
+        gm.EndGame();
+        Assert.IsFalse(detector.CheckMissileCollision(other), "피격 판정도 다시 일어나지 않음");
+        Frame(1f);
+
+        Assert.AreEqual(0f, RecordStore.GetBestTime(), "게임 오버 이후 기록 저장 없음");
+        Assert.AreEqual(1, results.Count, "OnGameResultReady 한 번");
+        Assert.AreEqual(first.SurvivalTime, gm.LastGameResult.SurvivalTime);
+        Assert.AreEqual(first.IsNewRecord, gm.LastGameResult.IsNewRecord);
+    }
+
+    [Test]
+    public void ResultEvent_AfterGameOverState_SameAsLastGameResult()
+    {
+        var order = new List<string>();
+        gm.OnGameStateChanged += s => order.Add("state:" + s);
+        gm.OnGameResultReady += _ => order.Add("result");
+
+        gm.StartGame();
+        Frame(3f);
+        HitPlayer();
+
+        CollectionAssert.AreEqual(new[] { "state:Playing", "state:GameOver", "result" }, order);
+        Assert.AreEqual(1, results.Count);
+        Assert.AreEqual(gm.LastGameResult.SurvivalTime, results[0].SurvivalTime);
+        Assert.AreEqual(gm.LastGameResult.BestTime, results[0].BestTime);
+        Assert.AreEqual(gm.LastGameResult.IsNewRecord, results[0].IsNewRecord);
+        Assert.IsFalse(timer.IsRunning, "결과 시점에 타이머 정지");
+        Assert.IsFalse(spawner.IsSpawning);
+    }
+
+    [Test]
+    public void LeavingDuringPlay_NoRecordNoResult()
+    {
+        // Exit/Restart 버튼은 씬을 전환할 뿐 EndGame을 호출하지 않는다. 씬 언로드(오브젝트 파괴)를 흉내 낸다.
+        gm.StartGame();
+        Frame(5f);
+        Assert.AreEqual(GameState.Playing, gm.CurrentState);
+
+        Object.DestroyImmediate(managerGo);
+        managerGo = null;
+        Frame(1f);
+
+        Assert.AreEqual(0f, RecordStore.GetBestTime(), "진행 중 이탈은 기록하지 않음");
+        Assert.AreEqual(0, results.Count);
+        CollectionAssert.AreEqual(new[] { GameState.Playing }, events, "GameOver가 발생하지 않음");
+    }
+
+    [Test]
+    public void StartGame_ClearsPreviousResult_KeepsBestTime()
+    {
+        gm.StartGame();
+        Frame(2f);
+        HitPlayer();
+        Assert.IsTrue(gm.HasGameResult);
+
+        foreach (Missile m in new List<Missile>(spawner.ActiveMissiles)) m.Despawn();
+        gm.StartGame();
+        Assert.IsFalse(gm.HasGameResult);
+        Assert.AreEqual(2f, RecordStore.GetBestTime(), 1e-6f, "재시작해도 최고기록 유지");
+
+        Frame(1f);
+        HitPlayer();
+        Assert.IsFalse(gm.LastGameResult.IsNewRecord);
+        Assert.AreEqual(1f, gm.LastGameResult.SurvivalTime, 1e-6f);
+        Assert.AreEqual(2f, gm.LastGameResult.BestTime, 1e-6f);
+        Assert.AreEqual(2, results.Count);
     }
 }

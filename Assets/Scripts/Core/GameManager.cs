@@ -5,9 +5,12 @@ using UnityEngine;
 /// 게임의 시작/종료와 GameState를 관리한다. 세부 동작은 각 시스템에 명령만 전달한다.
 /// - 시작: 피격 상태 초기화 → 플레이어 조작 활성화 → 생존시간 초기화/측정 시작 → 미사일 생성 시작 → Playing 전환 → 이벤트
 /// - 피격: PlayerHitDetector.OnPlayerHit 수신 → EndGame()
-/// - 종료: GameOver 전환 → 생존시간 정지 → 플레이어 사망(이동/점프 중단) → 입력 차단 → 생성 중지 → 미사일 정지 → 이벤트
+/// - 종료: GameOver 전환 → 생존시간 정지 → 플레이어 사망(이동/점프 중단) → 입력 차단 → 생성 중지 → 미사일 정지
+///         → 최종 생존시간으로 RecordStore.TryUpdateRecord → GameResult 생성 → OnGameStateChanged → OnGameResultReady
+/// - 기록 저장은 게임 오버(미사일 피격)에서만 한다. Exit/Restart 버튼의 씬 전환은 EndGame()을 거치지 않으므로 기록되지 않는다.
 /// Time.timeScale은 변경하지 않는다.
-/// Stage 6~9 확장 지점: OnGameStateChanged 구독(UI, 애니메이션), EndGame() 내부의 결과 계산/기록 저장 연결.
+/// Stage 7/9 확장 지점: Death 애니메이션 완료 후 결과 UI를 띄우려면 PublishGameResult() 호출 시점만 늦추면 된다
+/// (기록은 이미 EndGame()에서 확정 저장되므로 연출 도중 씬을 나가도 기록은 유지된다).
 /// </summary>
 [DisallowMultipleComponent]
 public class GameManager : MonoBehaviour
@@ -32,8 +35,17 @@ public class GameManager : MonoBehaviour
     /// <summary>게임을 끝낸 미사일 (없으면 null).</summary>
     public Missile LastHitMissile { get; private set; }
 
+    /// <summary>마지막 게임 오버의 결과. HasGameResult가 false면 기본값.</summary>
+    public GameResult LastGameResult { get; private set; }
+
+    /// <summary>이번 판의 게임 오버 결과가 확정되었는지. StartGame()에서 false로 초기화.</summary>
+    public bool HasGameResult { get; private set; }
+
     /// <summary>GameState가 바뀔 때마다 새 상태로 발생한다.</summary>
     public event Action<GameState> OnGameStateChanged;
+
+    /// <summary>게임 오버 결과(생존시간/최고기록/신기록 여부)가 준비되면 한 번 발생한다. Stage 9 GameOverUI용.</summary>
+    public event Action<GameResult> OnGameResultReady;
 
     private void Awake()
     {
@@ -77,6 +89,8 @@ public class GameManager : MonoBehaviour
         ResolveReferences();
         SubscribeHit();
         LastHitMissile = null;
+        LastGameResult = default;
+        HasGameResult = false;
 
         if (playerHitDetector != null)
         {
@@ -155,9 +169,29 @@ public class GameManager : MonoBehaviour
             missileSpawner.StopAllMissiles();
         }
 
-        // Stage 6~9: 결과 계산(survivalTimer.ElapsedTime), 기록 저장, 사망 연출 → 결과 UI 순서로 여기서 연결한다.
+        // 최종 생존시간 → 최고기록 갱신 시도 → 결과 확정. EndGame은 Playing에서 한 번만 통과하므로 기록도 한 번만 처리된다.
+        LastGameResult = CreateGameResult(survivalTimer != null ? survivalTimer.ElapsedTime : 0f);
+        HasGameResult = true;
 
         OnGameStateChanged?.Invoke(CurrentState);
+
+        // Stage 7: 사망 애니메이션 완료 이벤트가 생기면 그 시점에 호출하도록 옮긴다. 지금은 대기 없이 즉시 전달한다.
+        PublishGameResult();
+    }
+
+    /// <summary>최종 생존시간으로 최고기록 갱신을 시도하고 GameResult를 만든다.</summary>
+    private static GameResult CreateGameResult(float survivalTime)
+    {
+        bool isNewRecord = RecordStore.TryUpdateRecord(survivalTime);
+        return new GameResult(survivalTime, RecordStore.GetBestTime(), isNewRecord);
+    }
+
+    private void PublishGameResult()
+    {
+        if (HasGameResult)
+        {
+            OnGameResultReady?.Invoke(LastGameResult);
+        }
     }
 
     private void SetState(GameState state)

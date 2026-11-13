@@ -1,5 +1,5 @@
 // 여러 시스템이 공유하는 공통 데이터 타입.
-// Stage 2: ControlMode, Stage 4: GameState, Stage 5: DifficultySnapshot. GameResult는 Stage 6 이후 추가한다.
+// Stage 2: ControlMode, Stage 4: GameState, Stage 5: DifficultySnapshot, Stage 6: GameResult.
 
 /// <summary>게임 진행 상태. GameManager가 소유하고 변경한다.</summary>
 public enum GameState
@@ -53,5 +53,32 @@ public readonly struct DifficultySnapshot
     public override string ToString()
     {
         return $"Interval {SpawnInterval:0.###}s, MaxActive {MaxActiveMissiles}, Speed {MinMissileSpeed:0.##}~{MaxMissileSpeed:0.##}";
+    }
+}
+
+/// <summary>
+/// 게임 오버(미사일 피격) 시 GameManager가 만드는 결과 데이터. Stage 9 GameOverUI가 표시에 사용한다.
+/// </summary>
+public readonly struct GameResult
+{
+    /// <summary>이번 플레이의 생존시간(초).</summary>
+    public float SurvivalTime { get; }
+
+    /// <summary>이번 결과까지 반영된 최고 생존기록(초).</summary>
+    public float BestTime { get; }
+
+    /// <summary>이번 생존시간이 기존 최고기록을 초과해 갱신되었는지. 같은 기록은 false.</summary>
+    public bool IsNewRecord { get; }
+
+    public GameResult(float survivalTime, float bestTime, bool isNewRecord)
+    {
+        SurvivalTime = survivalTime;
+        BestTime = bestTime;
+        IsNewRecord = isNewRecord;
+    }
+
+    public override string ToString()
+    {
+        return $"Survival {SurvivalTime:0.00}s, Best {BestTime:0.00}s, NewRecord {IsNewRecord}";
     }
 }

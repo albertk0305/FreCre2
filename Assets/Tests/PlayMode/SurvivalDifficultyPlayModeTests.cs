@@ -16,10 +16,21 @@ public class SurvivalDifficultyPlayModeTests
 {
     private const string ScenePath = "Assets/Scenes/Play.unity";
 
+    private BestTimeBackup bestTimeBackup;
+
+    [SetUp]
+    public void BackupBestTime()
+    {
+        // Stage 6: 게임 오버 시 최고기록이 저장되므로 실제 기록을 백업한다.
+        bestTimeBackup = BestTimeBackup.Capture();
+        BestTimeBackup.ClearForTest();
+    }
+
     [UnityTearDown]
     public IEnumerator TearDown()
     {
         Time.timeScale = 1f;
+        bestTimeBackup.Restore();
         yield return null;
     }
 
