@@ -64,6 +64,14 @@ public class MissileSpawner : MonoBehaviour
     }
 
     public bool IsSpawning => isSpawning;
+
+    /// <summary>Start()에서 자동으로 생성을 시작할지. Stage 4부터 GameManager가 Awake에서 끈다.</summary>
+    public bool SpawnOnStart
+    {
+        get => spawnOnStart;
+        set => spawnOnStart = value;
+    }
+
     public float SpawnTimer => spawnTimer;
     public float SpawnRadius => spawnRadius;
     public float AimTargetHalfSize => aimTargetHalfSize;

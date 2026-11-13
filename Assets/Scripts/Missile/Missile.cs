@@ -93,16 +93,14 @@ public class Missile : MonoBehaviour
     /// <summary>고정 스텝 1회: 직선 이동 후 제거 조건 확인. 테스트에서 직접 호출할 수 있다.</summary>
     public void Tick(float deltaTime)
     {
-        if (!initialized || despawned || deltaTime <= 0f)
+        // StopMovement() 이후(게임 오버)에는 제자리에 남아야 하므로 수명/제거 판정도 멈춘다.
+        if (!initialized || despawned || !IsMoving || deltaTime <= 0f)
         {
             return;
         }
 
         Age += deltaTime;
-        if (IsMoving)
-        {
-            Move(deltaTime);
-        }
+        Move(deltaTime);
 
         if (ShouldDespawn())
         {
