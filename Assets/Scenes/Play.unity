@@ -506,6 +506,8 @@ GameObject:
   m_Component:
   - component: {fileID: 619571205}
   - component: {fileID: 619571204}
+  - component: {fileID: 619571206}
+  - component: {fileID: 619571207}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -528,6 +530,7 @@ MonoBehaviour:
   playerController: {fileID: 1690652016}
   playerHitDetector: {fileID: 1690652017}
   missileSpawner: {fileID: 1719845222}
+  survivalTimer: {fileID: 619571206}
   inputRouter: {fileID: 1690652015}
   startGameOnStart: 1
 --- !u!4 &619571205
@@ -545,6 +548,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1767336741}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &619571206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619571203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f508afbec51ad84489f391386cce746, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::SurvivalTimer
+--- !u!114 &619571207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619571203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdab6a3a28457f54aa3bc51e38fbd6da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::DifficultyManager
+  survivalTimer: {fileID: 619571206}
+  initialSpawnInterval: 1.8
+  minimumSpawnInterval: 0.45
+  spawnIntervalDecreaseRate: 0.0125
+  initialMaxMissiles: 5
+  maximumMissiles: 14
+  missileCountIncreaseInterval: 15
+  minMissileSpeed: 1.67
+  maxMissileSpeed: 2.33
 --- !u!1 &703301346
 GameObject:
   m_ObjectHideFlags: 0
@@ -572,14 +608,14 @@ RectTransform:
   m_GameObject: {fileID: 703301346}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 4.3, y: 4.3, z: 1}
+  m_LocalScale: {x: 1.6, y: 4.3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 56649422}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -450, y: 0}
+  m_AnchoredPosition: {x: -300, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &703301348
@@ -595,7 +631,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1741,14 +1777,14 @@ RectTransform:
   m_GameObject: {fileID: 1484758341}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 4.3, y: 4.3, z: 1}
+  m_LocalScale: {x: 1.6, y: 4.3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 56649422}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 450, y: 0}
+  m_AnchoredPosition: {x: 300, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1484758343
@@ -1764,7 +1800,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2036,14 +2072,11 @@ MonoBehaviour:
   arenaBounds: {fileID: 15440660}
   targetCamera: {fileID: 453244379}
   missileParent: {fileID: 935787819}
+  difficultyManager: {fileID: 619571207}
   spawnRadius: 5
   aimTargetHalfSize: 1.15
-  minMissileSpeed: 1.67
-  maxMissileSpeed: 2.33
-  spawnInterval: 1.8
-  maxActiveMissiles: 5
   despawnMargin: 0.33
-  spawnOnStart: 1
+  spawnOnStart: 0
 --- !u!1 &1767336740
 GameObject:
   m_ObjectHideFlags: 0

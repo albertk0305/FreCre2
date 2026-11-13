@@ -7,7 +7,9 @@ using UnityEngine;
 /// - 이동 방향: 생성점 → Center ± AimTargetHalfSize 정사각형 안의 무작위 목표점, 정규화. 8방향 양자화 없음.
 /// - 제거 범위: 카메라 가시 영역 + DespawnMargin. 판정은 Missile이 담당한다.
 /// Stage 3에서는 Spawn On Start로 자동 시작한다. Stage 4에서 GameManager가 Start/StopSpawning, StopAllMissiles를 호출한다.
-/// Stage 5에서 DifficultyManager가 SetSpawnSettings 등으로 간격/상한/속도를 넘겨줄 수 있다.
+/// - 난이도(Stage 5): 생성 시도마다 DifficultyManager.GetCurrentDifficulty()(SurvivalTimer.ElapsedTime 기준)로
+///   DifficultySnapshot을 받아 생성 간격/동시 개수 상한/속도 범위를 적용한다. 난이도 원본 수치는 DifficultyManager가 소유한다.
+///   DifficultyManager가 연결되지 않으면 0초 기준 기본 난이도(1.80초, 5개, 1.67~2.33)로 고정 동작한다.
 /// </summary>
 [DisallowMultipleComponent]
 public class MissileSpawner : MonoBehaviour
@@ -20,18 +22,12 @@ public class MissileSpawner : MonoBehaviour
     [SerializeField] private Camera targetCamera;
     [Tooltip("생성된 미사일의 부모(Hierarchy 정리용). 비우면 이 오브젝트 아래에 생성.")]
     [SerializeField] private Transform missileParent;
+    [Tooltip("생성 간격/동시 개수 상한/속도 범위의 출처. 비우면 0초 기준 기본 난이도로 고정.")]
+    [SerializeField] private DifficultyManager difficultyManager;
 
     [Header("Spawn Position / Direction")]
     [Min(0f)] [SerializeField] private float spawnRadius = 5.0f;
     [Min(0f)] [SerializeField] private float aimTargetHalfSize = 1.15f;
-
-    [Header("Speed (unit/s)")]
-    [Min(0f)] [SerializeField] private float minMissileSpeed = 1.67f;
-    [Min(0f)] [SerializeField] private float maxMissileSpeed = 2.33f;
-
-    [Header("Timing / Count (Stage 3 고정 시험값)")]
-    [Min(0.01f)] [SerializeField] private float spawnInterval = 1.80f;
-    [Min(0)] [SerializeField] private int maxActiveMissiles = 5;
 
     [Header("Despawn")]
     [Min(0f)] [SerializeField] private float despawnMargin = 0.33f;
@@ -42,6 +38,9 @@ public class MissileSpawner : MonoBehaviour
 
     private readonly List<Missile> activeMissiles = new List<Missile>();
     private float spawnTimer;
+    // 마지막으로 받은 난이도와, 다음 생성 시도까지 기다릴 간격
+    private DifficultySnapshot currentDifficulty = DifficultyManager.DefaultSnapshot;
+    private float currentSpawnInterval = DifficultyManager.DefaultSnapshot.SpawnInterval;
     private bool isSpawning;
     private bool cameraResolved;
 
@@ -75,10 +74,14 @@ public class MissileSpawner : MonoBehaviour
     public float SpawnTimer => spawnTimer;
     public float SpawnRadius => spawnRadius;
     public float AimTargetHalfSize => aimTargetHalfSize;
-    public float MinMissileSpeed => minMissileSpeed;
-    public float MaxMissileSpeed => maxMissileSpeed;
-    public float SpawnInterval => spawnInterval;
-    public int MaxActiveMissiles => maxActiveMissiles;
+    /// <summary>마지막 생성 시도(또는 StartSpawning) 때 받은 난이도.</summary>
+    public DifficultySnapshot CurrentDifficulty => currentDifficulty;
+    public DifficultyManager DifficultyManager => difficultyManager;
+    public float MinMissileSpeed => currentDifficulty.MinMissileSpeed;
+    public float MaxMissileSpeed => currentDifficulty.MaxMissileSpeed;
+    /// <summary>다음 생성 시도까지의 간격(초).</summary>
+    public float SpawnInterval => currentSpawnInterval;
+    public int MaxActiveMissiles => currentDifficulty.MaxActiveMissiles;
     public float DespawnMargin => despawnMargin;
 
     /// <summary>생성 기준 중심 (ArenaBounds.Center). ArenaBounds가 없으면 이 오브젝트 위치.</summary>
@@ -106,14 +109,6 @@ public class MissileSpawner : MonoBehaviour
         Tick(Time.deltaTime);
     }
 
-    private void OnValidate()
-    {
-        if (maxMissileSpeed < minMissileSpeed)
-        {
-            maxMissileSpeed = minMissileSpeed;
-        }
-    }
-
     private void OnDestroy()
     {
         foreach (Missile missile in activeMissiles)
@@ -126,7 +121,12 @@ public class MissileSpawner : MonoBehaviour
         activeMissiles.Clear();
     }
 
-    /// <summary>생성 타이머 진행. 시작 후 SpawnInterval마다 1회 생성을 시도한다. 테스트에서 직접 호출할 수 있다.</summary>
+    /// <summary>
+    /// 생성 타이머 진행. SpawnInterval이 지나면 1회 생성을 시도한다. 테스트에서 직접 호출할 수 있다.
+    /// - 시도 시점에 최신 DifficultySnapshot을 받아 상한/속도에 적용하고, 그 SpawnInterval을 다음 대기 간격으로 쓴다.
+    /// - 상한 도달로 생성하지 못하면 이번 시도를 건너뛰고 타이머를 0으로 초기화한다.
+    /// - 한 번에 한 번만 시도한다. 프레임 지연이나 빈자리가 여러 개 생겨도 몰아서 생성하지 않는다.
+    /// </summary>
     public void Tick(float deltaTime)
     {
         if (!isSpawning || deltaTime <= 0f)
@@ -135,26 +135,52 @@ public class MissileSpawner : MonoBehaviour
         }
 
         spawnTimer += deltaTime;
-        if (spawnTimer < spawnInterval)
+        if (spawnTimer < currentSpawnInterval)
         {
             return;
         }
 
-        // 한 번에 한 번만 시도한다. 프레임 지연으로 여러 간격이 쌓여도 몰아서 생성하지 않는다.
-        spawnTimer -= spawnInterval;
-        if (spawnTimer >= spawnInterval)
+        float waitedInterval = currentSpawnInterval;
+        Missile spawned = SpawnMissile(); // 최신 난이도 갱신 + 상한 확인
+        currentSpawnInterval = currentDifficulty.SpawnInterval;
+
+        if (spawned == null)
+        {
+            spawnTimer = 0f; // 상한 도달(또는 프리팹 없음): 생성 생략, 타이머 초기화
+            return;
+        }
+
+        spawnTimer -= waitedInterval; // 프레임 단위 오차만 이월
+        if (spawnTimer >= currentSpawnInterval)
         {
             spawnTimer = 0f;
         }
-
-        SpawnMissile(); // 상한 도달 시 내부에서 건너뜀
     }
 
-    /// <summary>생성을 시작한다. 첫 미사일은 SpawnInterval 후 생성된다.</summary>
+    /// <summary>생성을 시작한다. 첫 미사일은 시작 시점 난이도의 SpawnInterval(기본 1.80초) 후 생성된다.</summary>
     public void StartSpawning()
     {
+        RefreshDifficulty();
+        currentSpawnInterval = currentDifficulty.SpawnInterval;
         spawnTimer = 0f;
         isSpawning = true;
+    }
+
+    /// <summary>
+    /// DifficultyManager에서 현재 난이도(SurvivalTimer.ElapsedTime 기준)를 받아 저장하고 반환한다.
+    /// DifficultyManager가 없으면 기본 난이도를 사용한다.
+    /// </summary>
+    public DifficultySnapshot RefreshDifficulty()
+    {
+        DifficultySnapshot snapshot = difficultyManager != null
+            ? difficultyManager.GetCurrentDifficulty()
+            : DifficultyManager.DefaultSnapshot;
+        currentDifficulty = new DifficultySnapshot(
+            Mathf.Max(DifficultyManager.MinimumAllowedSpawnInterval, snapshot.SpawnInterval),
+            Mathf.Max(0, snapshot.MaxActiveMissiles),
+            Mathf.Max(0f, snapshot.MinMissileSpeed),
+            Mathf.Max(Mathf.Max(0f, snapshot.MinMissileSpeed), snapshot.MaxMissileSpeed));
+        return currentDifficulty;
     }
 
     /// <summary>새 미사일 생성을 중지한다. 이미 생성된 미사일은 그대로 움직인다.</summary>
@@ -173,16 +199,20 @@ public class MissileSpawner : MonoBehaviour
         }
     }
 
-    /// <summary>미사일 1개를 생성한다. 활성 수가 상한이면 생성하지 않고 null을 반환한다.</summary>
+    /// <summary>
+    /// 최신 난이도를 받아 미사일 1개를 생성한다. 활성 수가 상한이면 생성하지 않고 null을 반환한다.
+    /// 속도와 방향은 생성 시 한 번 정해지며 이후 변경하지 않는다.
+    /// </summary>
     public Missile SpawnMissile()
     {
+        RefreshDifficulty();
         if (missilePrefab == null)
         {
             return null;
         }
 
         PruneDestroyed();
-        if (activeMissiles.Count >= maxActiveMissiles)
+        if (activeMissiles.Count >= currentDifficulty.MaxActiveMissiles)
         {
             return null;
         }
@@ -229,9 +259,10 @@ public class MissileSpawner : MonoBehaviour
         return direction;
     }
 
+    /// <summary>현재 난이도의 MinMissileSpeed~MaxMissileSpeed 범위 무작위 속도.</summary>
     public float CalculateSpeed()
     {
-        return Random.Range(minMissileSpeed, Mathf.Max(minMissileSpeed, maxMissileSpeed));
+        return Random.Range(currentDifficulty.MinMissileSpeed, currentDifficulty.MaxMissileSpeed);
     }
 
     /// <summary>카메라 가시 영역 + DespawnMargin. 카메라가 없거나 Orthographic이 아니면 생성 원 기준으로 대체.</summary>

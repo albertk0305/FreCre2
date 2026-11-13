@@ -3,12 +3,11 @@ using UnityEngine;
 
 /// <summary>
 /// 게임의 시작/종료와 GameState를 관리한다. 세부 동작은 각 시스템에 명령만 전달한다.
-/// - 시작: Playing 전환 → 피격 상태 초기화 → 플레이어 조작 활성화 → 미사일 생성 시작 → 이벤트
+/// - 시작: 피격 상태 초기화 → 플레이어 조작 활성화 → 생존시간 초기화/측정 시작 → 미사일 생성 시작 → Playing 전환 → 이벤트
 /// - 피격: PlayerHitDetector.OnPlayerHit 수신 → EndGame()
-/// - 종료: GameOver 전환 → 플레이어 사망(이동/점프 중단) → 입력 차단 → 생성 중지 → 미사일 정지 → 이벤트
+/// - 종료: GameOver 전환 → 생존시간 정지 → 플레이어 사망(이동/점프 중단) → 입력 차단 → 생성 중지 → 미사일 정지 → 이벤트
 /// Time.timeScale은 변경하지 않는다.
-/// Stage 5~9 확장 지점: OnGameStateChanged 구독(SurvivalTimer, DifficultyManager, UI, 애니메이션),
-/// EndGame() 내부의 결과 계산/기록 저장 연결.
+/// Stage 6~9 확장 지점: OnGameStateChanged 구독(UI, 애니메이션), EndGame() 내부의 결과 계산/기록 저장 연결.
 /// </summary>
 [DisallowMultipleComponent]
 public class GameManager : MonoBehaviour
@@ -17,6 +16,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private PlayerController playerController;
     [SerializeField] private PlayerHitDetector playerHitDetector;
     [SerializeField] private MissileSpawner missileSpawner;
+    [Tooltip("생존시간 원본. 시작 시 0초로 초기화 후 측정, 게임 오버 시 정지.")]
+    [SerializeField] private SurvivalTimer survivalTimer;
     [Tooltip("게임 오버 시 입력을 차단할 라우터. 비우면 PlayerController와 같은 오브젝트에서 찾는다.")]
     [SerializeField] private PlayerInputRouter inputRouter;
 
@@ -96,6 +97,13 @@ public class GameManager : MonoBehaviour
             inputRouter.SetInputEnabled(true);
         }
 
+        // 타이머를 먼저 0초로 맞춰야 Spawner가 시작 시점(0초) 난이도로 첫 간격(1.80초)을 잡는다.
+        if (survivalTimer != null)
+        {
+            survivalTimer.ResetTimer();
+            survivalTimer.StartTimer();
+        }
+
         if (missileSpawner != null)
         {
             missileSpawner.StartSpawning();
@@ -127,6 +135,12 @@ public class GameManager : MonoBehaviour
         // 상태를 먼저 바꿔서 이후 처리 도중 들어오는 피격/종료 요청을 막는다.
         CurrentState = GameState.GameOver;
 
+        // 생존시간은 피격 즉시 멈춘다(이후 처리 중에도 증가하지 않음). 값은 결과/기록용으로 유지된다.
+        if (survivalTimer != null)
+        {
+            survivalTimer.StopTimer();
+        }
+
         if (playerController != null)
         {
             playerController.Die(); // 이동/점프 중단, IsDead (Stage 7 Death 애니메이션이 참조)
@@ -141,7 +155,7 @@ public class GameManager : MonoBehaviour
             missileSpawner.StopAllMissiles();
         }
 
-        // Stage 5~9: 생존시간 정지, 결과 계산, 기록 저장, 사망 연출 → 결과 UI 순서로 여기서 연결한다.
+        // Stage 6~9: 결과 계산(survivalTimer.ElapsedTime), 기록 저장, 사망 연출 → 결과 UI 순서로 여기서 연결한다.
 
         OnGameStateChanged?.Invoke(CurrentState);
     }
