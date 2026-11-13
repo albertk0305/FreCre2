@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -715,5 +716,193 @@ public class GameManagerTests
         Assert.AreEqual(1, results.Count);
         Assert.AreEqual(1f, results[0].SurvivalTime, 1e-6f);
         Assert.IsFalse(results[0].IsNewRecord);
+    }
+
+    // ---------- Stage 8: 충돌 이펙트 ----------
+
+    private GameObject CreateEffectTemplate(bool withHitEffect = true)
+    {
+        var template = new GameObject("HitEffectTemplate");
+        template.AddComponent<SpriteRenderer>();
+        if (withHitEffect) template.AddComponent<HitEffect>();
+        template.transform.SetParent(managerGo.transform); // TearDown에서 함께 정리
+        SetRef(gm, "hitEffectPrefab", template);
+        return template;
+    }
+
+    private static int CountClones(string templateName)
+    {
+        return Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Count(t => t.name == templateName + "(Clone)");
+    }
+
+    private Missile SpawnMovedMissile()
+    {
+        Missile m = spawner.SpawnMissile();
+        for (int i = 0; i < 40; i++) m.Tick(Dt); // 생성 위치에서 이동한 뒤 피격
+        Assert.AreNotEqual(m.SpawnPosition, m.Position);
+        return m;
+    }
+
+    [Test]
+    public void MissileHit_SpawnsOneEffect_AtMissileWorldPosition_AsRootObject()
+    {
+        CreateEffectTemplate();
+        gm.StartGame();
+        Missile m = SpawnMovedMissile();
+
+        Assert.IsTrue(detector.CheckMissileCollision(m));
+
+        GameObject effect = gm.LastHitEffect;
+        Assert.IsNotNull(effect);
+        Assert.AreEqual(1, CountClones("HitEffectTemplate"));
+        Assert.AreEqual(m.Position.x, effect.transform.position.x, 1e-5f, "피격 미사일의 현재 좌표");
+        Assert.AreEqual(m.Position.y, effect.transform.position.y, 1e-5f);
+        Assert.IsNull(effect.transform.parent, "Container가 없으면 씬 루트(미사일/플레이어 자식 아님)");
+        Assert.IsNotNull(effect.GetComponent<HitEffect>());
+        Assert.AreEqual(GameState.GameOver, gm.CurrentState);
+        Object.DestroyImmediate(effect);
+    }
+
+    [Test]
+    public void MissileHit_WithEffectContainer_ParentedToContainer()
+    {
+        CreateEffectTemplate();
+        var container = new GameObject("EffectContainer");
+        container.transform.position = new Vector3(3f, -2f, 0f);
+        SetRef(gm, "effectContainer", container.transform);
+        gm.StartGame();
+        Missile m = SpawnMovedMissile();
+
+        Assert.IsTrue(detector.CheckMissileCollision(m));
+
+        GameObject effect = gm.LastHitEffect;
+        Assert.AreSame(container.transform, effect.transform.parent);
+        Assert.AreEqual(m.Position.x, effect.transform.position.x, 1e-5f, "부모가 있어도 월드 좌표 유지");
+        Assert.AreEqual(m.Position.y, effect.transform.position.y, 1e-5f);
+        Object.DestroyImmediate(container);
+    }
+
+    [Test]
+    public void JumpDodge_NoEffect()
+    {
+        CreateEffectTemplate();
+        gm.StartGame();
+        Missile m = spawner.SpawnMissile();
+        Assert.IsTrue(player.TryJump());
+        for (int i = 0; i < 5; i++) player.UpdateJump(Dt);
+        Assert.GreaterOrEqual(player.JumpHeight, detector.DodgeHeightThreshold);
+
+        Assert.IsFalse(detector.CheckMissileCollision(m));
+        Assert.IsNull(gm.LastHitEffect);
+        Assert.AreEqual(0, CountClones("HitEffectTemplate"));
+        Assert.AreEqual(GameState.Playing, gm.CurrentState);
+    }
+
+    [Test]
+    public void DuplicateHits_OnlyOneEffect()
+    {
+        CreateEffectTemplate();
+        gm.StartGame();
+        Missile first = HitPlayer();
+        GameObject effect = gm.LastHitEffect;
+
+        Missile other = spawner.SpawnMissile();
+        for (int i = 0; i < 5; i++)
+        {
+            detector.CheckMissileCollision(other); // OnTriggerStay2D 반복과 같은 경로
+            detector.EvaluateCollider(other.GetComponent<Collider2D>());
+            gm.HandlePlayerHit(other);
+            gm.EndGame();
+        }
+
+        Assert.AreEqual(1, CountClones("HitEffectTemplate"));
+        Assert.AreSame(effect, gm.LastHitEffect);
+        Assert.AreSame(first, gm.LastHitMissile);
+        Object.DestroyImmediate(effect);
+    }
+
+    [Test]
+    public void NoEffectPrefab_GameOverAndRecordNormal()
+    {
+        gm.StartGame();
+        Frame(2f);
+        HitPlayer();
+        Assert.AreEqual(GameState.GameOver, gm.CurrentState);
+        Assert.IsNull(gm.LastHitEffect);
+        Assert.AreEqual(2f, RecordStore.GetBestTime(), 1e-6f);
+        Assert.AreEqual(1, results.Count);
+    }
+
+    [Test]
+    public void EffectPrefabWithoutHitEffect_ComponentAddedForAutoRemoval()
+    {
+        CreateEffectTemplate(withHitEffect: false);
+        gm.StartGame();
+        HitPlayer();
+        var hitEffect = gm.LastHitEffect.GetComponent<HitEffect>();
+        Assert.IsNotNull(hitEffect, "자동 제거 컴포넌트 추가");
+        hitEffect.Tick(10f);
+        Assert.IsTrue(gm.LastHitEffect == null, "보호 시간 후 제거");
+    }
+
+    [Test]
+    public void EffectRemoval_DoesNotAffectGameObjects_AndRunsAfterGameOver()
+    {
+        CreateEffectTemplate();
+        gm.StartGame();
+        Frame(1f);
+        Missile m = HitPlayer();
+        GameObject effect = gm.LastHitEffect;
+        var hitEffect = effect.GetComponent<HitEffect>();
+
+        // 게임 오버 처리(미사일 정지, 사망)가 끝나도 이펙트는 남아 계속 진행
+        Assert.IsTrue(effect != null);
+        Assert.IsFalse(hitEffect.IsFinished);
+        hitEffect.Tick(1f);
+        Assert.IsTrue(effect != null);
+        Assert.AreEqual(1f, hitEffect.Elapsed, 1e-6f);
+
+        hitEffect.Tick(5f);
+        Assert.IsTrue(effect == null);
+        Assert.IsTrue(m != null && !m.IsDespawned, "미사일 유지");
+        Assert.IsTrue(player != null && player.IsDead);
+        Assert.IsTrue(gm != null);
+        Assert.AreEqual(GameState.GameOver, gm.CurrentState);
+        Assert.AreEqual(1f, RecordStore.GetBestTime(), 1e-6f);
+    }
+
+    [Test]
+    public void Effect_IndependentOfDeathAnimation_ResultStillAfterDeath()
+    {
+        CreateEffectTemplate();
+        PlayerAnimationController anim = AddAnimationController();
+        gm.StartGame();
+        HitPlayer();
+        GameObject effect = gm.LastHitEffect;
+        Assert.IsNotNull(effect);
+        Assert.AreEqual(0, results.Count, "결과는 Death 완료 대기(이펙트와 무관)");
+
+        anim.Tick(Dt); // Death 완료
+        Assert.AreEqual(1, results.Count);
+        Assert.IsTrue(effect != null, "이펙트는 Death와 별개로 자기 수명대로 재생");
+        Object.DestroyImmediate(effect);
+    }
+
+    [Test]
+    public void Restart_ClearsLastHitEffect_NextGameOverSpawnsNewOne()
+    {
+        CreateEffectTemplate();
+        gm.StartGame();
+        HitPlayer();
+        GameObject first = gm.LastHitEffect;
+
+        foreach (Missile mm in new List<Missile>(spawner.ActiveMissiles)) mm.Despawn();
+        gm.StartGame();
+        Assert.IsNull(gm.LastHitEffect);
+        HitPlayer();
+        Assert.IsNotNull(gm.LastHitEffect);
+        Assert.AreNotSame(first, gm.LastHitEffect);
+        Object.DestroyImmediate(first);
+        Object.DestroyImmediate(gm.LastHitEffect);
     }
 }

@@ -5,7 +5,8 @@ using UnityEngine;
 /// 개별 미사일의 직선 이동, 방향별 이미지 선택, 정지 및 제거를 담당한다.
 /// - 생성 시 MissileSpawner가 Initialize()로 위치/방향/속도/목표점/제거 범위를 전달한다.
 /// - 생성 후 방향과 속도는 바뀌지 않으며 플레이어를 추적하지 않는다.
-/// - 실제 이동 방향은 360° 자유 각도. 이미지만 가장 가까운 8방향 스프라이트를 사용한다(회전 없음).
+/// - 실제 이동 방향은 360° 자유 각도. 이미지만 가장 가까운 8방향 스프라이트를 사용한다(Transform 회전 없음).
+///   Stage 8: 자식 Animator가 있으면 같은 방향 이름의 State(South, SouthEast, …)를 재생한다. 클립은 Sprite만 바꾼다.
 /// - 목표점을 지나친 뒤 제거 범위(카메라 + DespawnMargin)를 벗어나면 제거된다.
 ///   생성 직후 화면 밖에 있는 것은 정상이며 그 이유로 제거하지 않는다.
 /// </summary>
@@ -35,9 +36,15 @@ public class Missile : MonoBehaviour
     [Tooltip("0 S, 1 SE, 2 E, 3 NE, 4 N, 5 NW, 6 W, 7 SW. 비어 있는 방향은 South(0) 이미지로 대체된다.")]
     [SerializeField] private Sprite[] directionSprites = new Sprite[DirectionCount];
 
+    [Tooltip("방향별 비행 애니메이션 Animator(선택). State 이름은 South/SouthEast/East/NorthEast/North/NorthWest/West/SouthWest. 비우면 자식에서 찾는다.")]
+    [SerializeField] private Animator directionAnimator;
+
     [Header("Safety")]
     [Tooltip("설정 오류로 제거 조건이 충족되지 않을 때를 대비한 최대 수명(초). 0 이하면 사용하지 않음.")]
     [SerializeField] private float maxLifetime = 20f;
+
+    public const string AnimatorLayerName = "Base Layer";
+    private static readonly int[] DirectionStateHashes = BuildDirectionStateHashes();
 
     private Rigidbody2D body;
     private Sprite defaultSprite;
@@ -200,6 +207,10 @@ public class Missile : MonoBehaviour
         {
             spriteRenderer = GetComponentInChildren<SpriteRenderer>(true);
         }
+        if (directionAnimator == null)
+        {
+            directionAnimator = GetComponentInChildren<Animator>(true);
+        }
         if (defaultSprite == null && spriteRenderer != null)
         {
             // 프리팹에 지정된 South 이미지를 최종 대체 이미지로 기억한다.
@@ -208,21 +219,61 @@ public class Missile : MonoBehaviour
     }
 
     /// <summary>
-    /// 방향 이미지를 적용한다. Stage 8에서 Animator를 붙일 경우 이 지점에서 방향 파라미터를 설정하면 된다.
+    /// 방향 이미지를 적용한다. 정지 이미지(directionSprites)를 먼저 넣고,
+    /// 방향 State가 있는 Animator가 있으면 해당 비행 애니메이션을 재생한다(생성 시 1회, 이후 변경 없음).
     /// </summary>
     private void ApplyDirectionVisual(int index)
     {
         VisualDirection = (Direction8)index;
-        if (spriteRenderer == null)
+        if (spriteRenderer != null)
+        {
+            Sprite sprite = ResolveSprite(directionSprites, index, defaultSprite);
+            if (sprite != null)
+            {
+                spriteRenderer.sprite = sprite;
+            }
+        }
+
+        PlayDirectionAnimation(VisualDirection);
+    }
+
+    private void PlayDirectionAnimation(Direction8 direction)
+    {
+        // EditMode에서는 Animator가 재생되지 않으므로 호출하지 않는다.
+        if (!Application.isPlaying || directionAnimator == null || !directionAnimator.isActiveAndEnabled
+            || directionAnimator.runtimeAnimatorController == null)
         {
             return;
         }
 
-        Sprite sprite = ResolveSprite(directionSprites, index, defaultSprite);
-        if (sprite != null)
+        int hash = GetDirectionStateHash(direction);
+        if (directionAnimator.HasState(0, hash))
         {
-            spriteRenderer.sprite = sprite;
+            directionAnimator.Play(hash, 0, 0f);
         }
+    }
+
+    /// <summary>방향에 해당하는 비행 애니메이션 State 이름 (예: NorthEast).</summary>
+    public static string GetDirectionStateName(Direction8 direction)
+    {
+        return direction.ToString();
+    }
+
+    /// <summary>"Base Layer.&lt;방향&gt;" full path hash.</summary>
+    public static int GetDirectionStateHash(Direction8 direction)
+    {
+        int i = (int)direction;
+        return i >= 0 && i < DirectionCount ? DirectionStateHashes[i] : DirectionStateHashes[0];
+    }
+
+    private static int[] BuildDirectionStateHashes()
+    {
+        var hashes = new int[DirectionCount];
+        for (int i = 0; i < DirectionCount; i++)
+        {
+            hashes[i] = Animator.StringToHash(AnimatorLayerName + "." + GetDirectionStateName((Direction8)i));
+        }
+        return hashes;
     }
 
     // ---------------- 순수 계산 (EditMode 테스트 대상) ----------------

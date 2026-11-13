@@ -4,7 +4,8 @@ using UnityEngine;
 /// <summary>
 /// 게임의 시작/종료와 GameState를 관리한다. 세부 동작은 각 시스템에 명령만 전달한다.
 /// - 시작: 피격 상태 초기화 → 플레이어 조작 활성화 → 생존시간 초기화/측정 시작 → 미사일 생성 시작 → Playing 전환 → 이벤트
-/// - 피격: PlayerHitDetector.OnPlayerHit 수신 → EndGame()
+/// - 피격: PlayerHitDetector.OnPlayerHit 수신 → (Stage 8) 피격 미사일 위치에 충돌 이펙트 1개 생성 → EndGame()
+///   이펙트는 독립 오브젝트(선택: EffectContainer 자식)로 스스로 재생/제거되며, 실패해도 게임 오버를 막지 않는다.
 /// - 종료: GameOver 전환 → 생존시간 정지 → 플레이어 사망(이동/점프 중단) → 입력 차단 → 생성 중지 → 미사일 정지
 ///         → 최종 생존시간으로 RecordStore.TryUpdateRecord → GameResult 생성(즉시 확정) → OnGameStateChanged
 ///         → (Stage 7) PlayerAnimationController.OnDeathFinished 대기 → OnGameResultReady
@@ -28,6 +29,12 @@ public class GameManager : MonoBehaviour
     [Tooltip("사망 애니메이션 완료(OnDeathFinished) 후 결과를 전달한다. 비우면 PlayerController 자식에서 찾고, 없으면 결과를 즉시 전달.")]
     [SerializeField] private PlayerAnimationController playerAnimation;
 
+    [Header("Hit Effect")]
+    [Tooltip("미사일 피격 시 생성할 충돌 이펙트 프리팹(MissileHitEffect). 비우면 이펙트 없이 게임 오버만 처리.")]
+    [SerializeField] private GameObject hitEffectPrefab;
+    [Tooltip("생성된 이펙트의 부모(선택). 비우면 씬 루트에 생성.")]
+    [SerializeField] private Transform effectContainer;
+
     [Header("Game Over")]
     [Tooltip("사망 애니메이션 완료 신호를 기다리는 최대 시간(초). 지나면 결과를 강제로 전달한다.")]
     [Min(0f)] [SerializeField] private float deathResultTimeout = 3f;
@@ -44,6 +51,9 @@ public class GameManager : MonoBehaviour
 
     /// <summary>게임을 끝낸 미사일 (없으면 null).</summary>
     public Missile LastHitMissile { get; private set; }
+
+    /// <summary>이번 판에 생성한 충돌 이펙트 (없거나 이미 제거되었으면 null).</summary>
+    public GameObject LastHitEffect { get; private set; }
 
     /// <summary>마지막 게임 오버의 결과. HasGameResult가 false면 기본값.</summary>
     public GameResult LastGameResult { get; private set; }
@@ -116,6 +126,7 @@ public class GameManager : MonoBehaviour
         SubscribeHit();
         SubscribeDeath();
         LastHitMissile = null;
+        LastHitEffect = null; // 이전 판 이펙트는 스스로 끝까지 재생 후 제거된다
         LastGameResult = default;
         HasGameResult = false;
         IsGameResultPublished = false;
@@ -164,7 +175,50 @@ public class GameManager : MonoBehaviour
         }
 
         LastHitMissile = missile;
+        // 게임 오버 처리(미사일 정지 등) 전에 피격 위치를 확정해 이펙트를 만든다. Playing 검사로 판당 1개만 생성된다.
+        SpawnHitEffect(ResolveHitPosition(missile));
         EndGame();
+    }
+
+    /// <summary>피격 미사일의 현재 월드 좌표. 미사일이 없으면 플레이어 지면 위치(없으면 GameManager 위치).</summary>
+    private Vector3 ResolveHitPosition(Missile missile)
+    {
+        if (missile != null)
+        {
+            // Missile.Position은 이동 로직이 갱신하는 현재 좌표(Transform은 물리 스텝 반영 전일 수 있음).
+            Vector2 p = missile.Position;
+            return new Vector3(p.x, p.y, missile.transform.position.z);
+        }
+        if (playerController != null)
+        {
+            Vector2 p = playerController.GroundPosition;
+            return new Vector3(p.x, p.y, playerController.transform.position.z);
+        }
+        return transform.position;
+    }
+
+    /// <summary>충돌 이펙트를 독립 오브젝트로 생성한다. 프리팹이 없거나 생성 중 오류가 나도 게임 오버는 계속 진행된다.</summary>
+    private void SpawnHitEffect(Vector3 position)
+    {
+        if (hitEffectPrefab == null)
+        {
+            return;
+        }
+
+        try
+        {
+            GameObject effect = Instantiate(hitEffectPrefab, position, hitEffectPrefab.transform.rotation, effectContainer);
+            if (effect.GetComponent<HitEffect>() == null)
+            {
+                // 프리팹에 HitEffect가 빠져 있어도 무한히 남지 않도록 자동 제거 컴포넌트를 붙인다.
+                effect.AddComponent<HitEffect>();
+            }
+            LastHitEffect = effect;
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e, this);
+        }
     }
 
     /// <summary>게임을 종료한다. Playing이 아니면 아무것도 하지 않는다(중복 실행 방지).</summary>
