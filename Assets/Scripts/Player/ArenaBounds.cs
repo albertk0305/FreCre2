@@ -13,7 +13,7 @@ public class ArenaBounds : MonoBehaviour
     [Tooltip("경기장(모래 영역)의 월드 중심 좌표. 카메라 위치가 아니라 Tilemap의 실제 모래 중심을 기준으로 지정한다.")]
     [SerializeField] private Vector2 center = Vector2.zero;
 
-    [Tooltip("경기장 중심에서 각 변까지의 거리(이동 경계 한 변의 1/2). 기본 1.65 → 3.3×3.3 unit.")]
+    [Tooltip("경기장 중심에서 각 변까지의 거리(이동 경계 한 변의 1/2). 기본 2.0 → 4.0×4.0 unit.")]
     [Min(0f)]
     [SerializeField] private float halfSize = DefaultHalfSize;
 

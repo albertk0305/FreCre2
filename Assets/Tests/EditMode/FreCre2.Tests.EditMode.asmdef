@@ -3,6 +3,8 @@
     "rootNamespace": "",
     "references": [
         "FreCre2.Runtime",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

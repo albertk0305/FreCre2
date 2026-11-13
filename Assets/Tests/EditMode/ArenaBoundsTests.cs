@@ -6,6 +6,10 @@ public class ArenaBoundsTests
     private const float Eps = 1e-5f;
     private const float Radius = 0.30f;
 
+    // 아래 계산 테스트는 기본값과 무관한 고정 HalfSize(1.65)를 사용한다 → 기대값 limit = 1.35.
+    // 기본값(v0.5 = 2.0) 자체는 DefaultHalfSize_Is200, v0.5 실제 설정은 V05Config_* 테스트에서 검증한다.
+    private const float MathHalfSize = 1.65f;
+
     private GameObject go;
     private ArenaBounds arena;
 
@@ -15,7 +19,7 @@ public class ArenaBoundsTests
         go = new GameObject("ArenaBoundsTest");
         arena = go.AddComponent<ArenaBounds>();
         arena.Center = Vector2.zero;
-        arena.HalfSize = ArenaBounds.DefaultHalfSize;
+        arena.HalfSize = MathHalfSize;
     }
 
     [TearDown]
@@ -31,11 +35,27 @@ public class ArenaBoundsTests
     }
 
     [Test]
-    public void DefaultHalfSize_Is165()
+    public void DefaultHalfSize_Is200()
     {
         var fresh = new GameObject("Fresh").AddComponent<ArenaBounds>();
-        try { Assert.AreEqual(1.65f, fresh.HalfSize, Eps); }
+        try { Assert.AreEqual(2.0f, fresh.HalfSize, Eps); }
         finally { Object.DestroyImmediate(fresh.gameObject); }
+    }
+
+    // v0.5 씬 설정: Center (0.5,-0.5), HalfSize 2.0, radius 0.30 → X [-1.2, 2.2], Y [-2.2, 1.2]
+    [TestCase(10f, -0.5f, 2.2f, -0.5f)]
+    [TestCase(-10f, -0.5f, -1.2f, -0.5f)]
+    [TestCase(0.5f, 10f, 0.5f, 1.2f)]
+    [TestCase(0.5f, -10f, 0.5f, -2.2f)]
+    [TestCase(10f, 10f, 2.2f, 1.2f)]
+    [TestCase(-10f, 10f, -1.2f, 1.2f)]
+    [TestCase(10f, -10f, 2.2f, -2.2f)]
+    [TestCase(-10f, -10f, -1.2f, -2.2f)]
+    public void V05Config_EdgesAndCorners(float px, float py, float ex, float ey)
+    {
+        arena.Center = new Vector2(0.5f, -0.5f);
+        arena.HalfSize = 2.0f;
+        AssertVec(new Vector2(ex, ey), arena.ClampPosition(new Vector2(px, py), Radius));
     }
 
     [Test]
