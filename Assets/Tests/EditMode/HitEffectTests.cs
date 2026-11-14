@@ -35,6 +35,13 @@ public class HitEffectTests
         Assert.Greater(HitEffect.ResolveSafetyLifetime(-1f, 0f, 0f), 0f, "0 이하 설정도 유한한 양수 수명");
     }
 
+    [TestCase(float.PositiveInfinity)] // Animator.speed = 0일 때 AnimatorStateInfo.length
+    [TestCase(float.NaN)]
+    public void SafetyLifetime_NonFiniteLength_FallsBackToFiniteDuration(float length)
+    {
+        Assert.AreEqual(2f, HitEffect.ResolveSafetyLifetime(length, 2f, 0.5f), 1e-6f, "멈춘 Animator가 수명을 무한히 늘리지 않음");
+    }
+
     // ---------- 보호 장치 / 제거 범위 ----------
 
     [Test]

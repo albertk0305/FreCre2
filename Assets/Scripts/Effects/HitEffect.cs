@@ -26,6 +26,7 @@ public class HitEffect : MonoBehaviour
     private bool playable;
     private int expectedStateHash; // State short name hash. 0이면 기본 State(첫 평가 때 기록)
     private float observedLength = -1f;
+    private readonly System.Collections.Generic.List<AnimatorClipInfo> clipInfos = new System.Collections.Generic.List<AnimatorClipInfo>();
 
     public Animator Animator => animator;
     public float Elapsed { get; private set; }
@@ -78,9 +79,12 @@ public class HitEffect : MonoBehaviour
 
             if (info.shortNameHash == expectedStateHash)
             {
-                if (info.length > 0f)
+                // 실제 클립 재생 길이(속도 1 기준). 멈춘 Animator가 수명을 늘리지 못하게 속도는 반영하지 않는다.
+                // AnimatorStateInfo.length는 재생 속도로 나눈 값이라 speed=0이면 Infinity가 되므로 클립 길이를 우선 사용한다.
+                float length = ResolveUnscaledLength(info);
+                if (length > 0f)
                 {
-                    observedLength = info.length; // 실제 클립 재생 길이(속도 1 기준). 멈춘 Animator가 수명을 늘리지 못하게 속도는 반영하지 않음
+                    observedLength = length;
                 }
                 if (IsPlaybackFinished(info.normalizedTime))
                 {
@@ -98,6 +102,25 @@ public class HitEffect : MonoBehaviour
             }
             Finish();
         }
+    }
+
+    /// <summary>현재 State 클립의 원래 길이(속도 무관). 클립 정보가 없으면 유한한 State 길이, 그것도 없으면 -1.</summary>
+    private float ResolveUnscaledLength(AnimatorStateInfo info)
+    {
+        float clipLength = -1f;
+        animator.GetCurrentAnimatorClipInfo(0, clipInfos);
+        foreach (AnimatorClipInfo clip in clipInfos)
+        {
+            if (clip.clip != null)
+            {
+                clipLength = Mathf.Max(clipLength, clip.clip.length);
+            }
+        }
+        if (IsValidLength(clipLength))
+        {
+            return clipLength;
+        }
+        return IsValidLength(info.length) ? info.length : -1f;
     }
 
     private bool CheckPlayable()
@@ -148,10 +171,15 @@ public class HitEffect : MonoBehaviour
         return normalizedTime >= 1f;
     }
 
-    /// <summary>보호 수명: 실제 길이를 알면 max(fallback, 길이 + 여유), 모르면 fallback.</summary>
+    /// <summary>보호 수명: 실제 길이를 알면 max(fallback, 길이 + 여유), 모르거나 유한하지 않으면 fallback. 항상 유한한 양수.</summary>
     public static float ResolveSafetyLifetime(float observedLength, float fallbackDuration, float margin)
     {
         float fallback = Mathf.Max(0.05f, fallbackDuration);
-        return observedLength > 0f ? Mathf.Max(fallback, observedLength + Mathf.Max(0f, margin)) : fallback;
+        return IsValidLength(observedLength) ? Mathf.Max(fallback, observedLength + Mathf.Max(0f, margin)) : fallback;
+    }
+
+    private static bool IsValidLength(float length)
+    {
+        return length > 0f && !float.IsInfinity(length) && !float.IsNaN(length);
     }
 }

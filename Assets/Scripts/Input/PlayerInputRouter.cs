@@ -18,6 +18,9 @@ public class PlayerInputRouter : MonoBehaviour
 
     [SerializeField] private bool inputEnabled = true;
 
+    [Tooltip("Mobile 모드에서만 활성화할 모바일 조작 UI 루트(UICanvas/MobileControls). 비우면 UI 표시를 바꾸지 않는다.")]
+    [SerializeField] private GameObject mobileControlsRoot;
+
     private Vector2 moveVector;
     private bool jumpRequested;
 
@@ -34,10 +37,8 @@ public class PlayerInputRouter : MonoBehaviour
 
     private void Awake()
     {
-        if (loadModeFromSettings)
-        {
-            Initialize(ControlSettings.GetControlMode());
-        }
+        // loadModeFromSettings가 꺼져 있어도 Inspector 값으로 모바일 UI 표시를 맞춘다.
+        Initialize(loadModeFromSettings ? ControlSettings.GetControlMode() : controlMode);
     }
 
     private void Update()
@@ -45,11 +46,15 @@ public class PlayerInputRouter : MonoBehaviour
         UpdateInput();
     }
 
-    /// <summary>조작 방식을 설정한다.</summary>
+    /// <summary>조작 방식을 설정하고, Mobile일 때만 MobileControlsRoot를 활성화한다.</summary>
     public void Initialize(ControlMode mode)
     {
         controlMode = mode;
-        // Stage 10: Mobile일 때 MobileControlsRoot 활성화.
+        // Stage 9: 모바일 조작 UI 표시/숨김만 처리. 조이스틱/점프 버튼 입력 연결은 Stage 10.
+        if (mobileControlsRoot != null)
+        {
+            mobileControlsRoot.SetActive(mode == ControlMode.Mobile);
+        }
     }
 
     /// <summary>현재 조작 방식의 입력을 읽는다. Update에서 매 프레임 호출된다.</summary>

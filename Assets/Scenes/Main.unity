@@ -296,7 +296,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Best 10:00
+  m_text: Best 10:00:00
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: b9709bfb091bc354a995e3632e95ac8e, type: 2}
   m_sharedMaterial: {fileID: -377438472947808839, guid: b9709bfb091bc354a995e3632e95ac8e, type: 2}
@@ -323,8 +323,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 29
+  m_fontSizeBase: 29
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1468,6 +1468,7 @@ GameObject:
   - component: {fileID: 1846104805}
   - component: {fileID: 1846104804}
   - component: {fileID: 1846104803}
+  - component: {fileID: 1846104807}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1558,6 +1559,24 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1846104807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846104802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97f92290c78a4ed4b8f3788c99bf320a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::MainMenuUI
+  bestRecordText: {fileID: 149117802}
+  bestRecordFormat: Best {0}
+  pcButtonImage: {fileID: 1038450904}
+  mobileButtonImage: {fileID: 910978785}
+  selectedColor: {r: 1, g: 1, b: 1, a: 1}
+  unselectedColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
 --- !u!1 &1895010498
 GameObject:
   m_ObjectHideFlags: 0

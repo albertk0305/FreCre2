@@ -177,6 +177,7 @@ GameObject:
   - component: {fileID: 56649421}
   - component: {fileID: 56649420}
   - component: {fileID: 56649419}
+  - component: {fileID: 56649423}
   m_Layer: 5
   m_Name: UICanvas
   m_TagString: Untagged
@@ -272,6 +273,26 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &56649423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 56649418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ca187581edf9bd47a67818427fcdf65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::GameOverUI
+  gameManager: {fileID: 619571204}
+  gameOverPanel: {fileID: 477827893}
+  messageText: {fileID: 183538749}
+  gameOverMessage: GAME OVER
+  newRecordMessage: NEW RECORD!
+  newRecordObject: {fileID: 0}
+  resultSurvivalTimeText: {fileID: 0}
+  resultBestTimeText: {fileID: 0}
 --- !u!1 &98690199
 GameObject:
   m_ObjectHideFlags: 0
@@ -631,7 +652,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Game Over
+  m_text: New Record!
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: b9709bfb091bc354a995e3632e95ac8e, type: 2}
   m_sharedMaterial: {fileID: -377438472947808839, guid: b9709bfb091bc354a995e3632e95ac8e, type: 2}
@@ -848,6 +869,81 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &462139290
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 462139291}
+  - component: {fileID: 462139293}
+  - component: {fileID: 462139292}
+  m_Layer: 5
+  m_Name: BestIcon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &462139291
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462139290}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 477827894}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -300, y: 75}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &462139292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462139290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 3438093691042515538, guid: 387fadf581f64e545a2b70893fa14e9a, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &462139293
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462139290}
+  m_CullTransparentMesh: 1
 --- !u!1 &477827893
 GameObject:
   m_ObjectHideFlags: 0
@@ -878,6 +974,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 183538748}
+  - {fileID: 462139291}
   m_Father: {fileID: 56649422}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -2970,6 +3067,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1585477020}
+  - component: {fileID: 1585477021}
   m_Layer: 5
   m_Name: PlayHUD
   m_TagString: Untagged
@@ -2998,6 +3096,24 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1585477021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585477019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 665dca2385c56044db79bedc0e022b89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::PlayHUD
+  survivalTimer: {fileID: 619571206}
+  gameManager: {fileID: 619571204}
+  survivalTimeText: {fileID: 2131552686}
+  bestTimeText: {fileID: 159305505}
+  survivalTimeFormat: '{0}'
+  bestTimeFormat: '{0}'
 --- !u!1 &1674332487
 GameObject:
   m_ObjectHideFlags: 0
@@ -3159,6 +3275,7 @@ MonoBehaviour:
   loadModeFromSettings: 1
   controlMode: 0
   inputEnabled: 1
+  mobileControlsRoot: {fileID: 0}
 --- !u!114 &1690652016
 MonoBehaviour:
   m_ObjectHideFlags: 0

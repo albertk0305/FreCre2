@@ -5,6 +5,8 @@
         "FreCre2.Runtime",
         "Unity.InputSystem",
         "Unity.InputSystem.TestFramework",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
