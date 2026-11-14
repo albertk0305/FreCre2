@@ -5,8 +5,9 @@ using UnityEngine.InputSystem;
 /// 입력 장치별 입력을 공통 형식(MoveVector, 점프 요청)으로 변환한다.
 /// PlayerController는 이 클래스의 출력만 사용하며 어떤 장치에서 입력되었는지 알 필요가 없다.
 ///
-/// Stage 2: PC 키보드(WASD / 방향키 / Space)만 구현.
-/// Stage 10: 모바일 입력은 SubmitInput()으로 같은 경로에 공급하면 PlayerController 수정이 필요 없다.
+/// Stage 2: PC 키보드(WASD / 방향키 / Space).
+/// Stage 10: Mobile 모드에서는 MobileJoystick.Direction / MobileJumpButton 요청을 같은 SubmitInput() 경로로 공급한다.
+///           (PlayerController 수정 없음. 점프 조건/쿨다운은 PlayerController가 그대로 판단)
 /// </summary>
 [DisallowMultipleComponent]
 public class PlayerInputRouter : MonoBehaviour
@@ -20,6 +21,12 @@ public class PlayerInputRouter : MonoBehaviour
 
     [Tooltip("Mobile 모드에서만 활성화할 모바일 조작 UI 루트(UICanvas/MobileControls). 비우면 UI 표시를 바꾸지 않는다.")]
     [SerializeField] private GameObject mobileControlsRoot;
+
+    [Tooltip("Mobile 모드 이동 입력 (UICanvas/MobileControls/MobileJoystick)")]
+    [SerializeField] private MobileJoystick mobileJoystick;
+
+    [Tooltip("Mobile 모드 점프 입력 (UICanvas/MobileControls/MobileJumpButton)")]
+    [SerializeField] private MobileJumpButton mobileJumpButton;
 
     private Vector2 moveVector;
     private bool jumpRequested;
@@ -50,11 +57,17 @@ public class PlayerInputRouter : MonoBehaviour
     public void Initialize(ControlMode mode)
     {
         controlMode = mode;
-        // Stage 9: 모바일 조작 UI 표시/숨김만 처리. 조이스틱/점프 버튼 입력 연결은 Stage 10.
         if (mobileControlsRoot != null)
         {
             mobileControlsRoot.SetActive(mode == ControlMode.Mobile);
         }
+    }
+
+    /// <summary>Mobile 모드에서 사용할 조이스틱/점프 버튼을 지정한다(코드 구성 및 테스트용. 보통은 Inspector에서 연결).</summary>
+    public void SetMobileInputs(MobileJoystick joystick, MobileJumpButton jumpButton)
+    {
+        mobileJoystick = joystick;
+        mobileJumpButton = jumpButton;
     }
 
     /// <summary>현재 조작 방식의 입력을 읽는다. Update에서 매 프레임 호출된다.</summary>
@@ -62,17 +75,37 @@ public class PlayerInputRouter : MonoBehaviour
     {
         if (!inputEnabled)
         {
+            // 입력 차단 중(게임 오버 등) 눌린 모바일 점프가 쌓였다가 나중에 실행되지 않도록 버린다.
+            if (mobileJumpButton != null)
+            {
+                mobileJumpButton.ConsumeJumpPressed();
+            }
             return;
         }
 
         switch (controlMode)
         {
+            case ControlMode.Mobile when mobileJoystick != null || mobileJumpButton != null:
+                ReadMobile();
+                break;
             case ControlMode.PC:
             default:
-                // Stage 10 전까지 Mobile 모드도 키보드 입력으로 대체한다.
+                // 모바일 UI가 연결되지 않은 Mobile 모드는 이전처럼 키보드로 대체한다.
                 ReadKeyboard(Keyboard.current);
                 break;
         }
+    }
+
+    /// <summary>
+    /// 모바일 조이스틱/점프 버튼을 공통 입력 경로로 공급한다.
+    /// 조이스틱은 8방향 단위 벡터(터치 해제 시 0), 점프는 누른 순간 1회 요청이다.
+    /// </summary>
+    private void ReadMobile()
+    {
+        // 조이스틱이 비활성화되면 OnDisable에서 Direction이 0으로 초기화되므로 이동이 남지 않는다.
+        Vector2 move = mobileJoystick != null ? mobileJoystick.Direction : Vector2.zero;
+        bool jump = mobileJumpButton != null && mobileJumpButton.ConsumeJumpPressed();
+        SubmitInput(move, jump);
     }
 
     /// <summary>
