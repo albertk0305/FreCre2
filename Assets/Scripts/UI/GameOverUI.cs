@@ -7,6 +7,8 @@ using UnityEngine;
 /// - OnGameResultReady는 사망 애니메이션 완료 후 발생하므로 기존 연출 순서가 유지된다.
 /// - 플레이 중(Awake, GameState.Playing 전환)에는 패널을 숨긴다. 씬 재로드로 재시작하면 Awake에서 숨겨진 상태로 시작한다.
 /// - Exit/Restart 버튼은 이 패널에 속하지 않으며 기존 SceneNavigationButtons로 항상 동작한다.
+/// - Message UI(CenterMessageUI)가 연결되면 TextPanel 표시를 그것에 맡긴다(카운트다운과 같은 패널을 충돌 없이 공유).
+///   연결하지 않으면 기존처럼 Game Over Panel / Message Text를 직접 제어한다.
 /// 이 컴포넌트는 숨길 패널(TextPanel)이 아닌, 항상 활성인 오브젝트(예: UICanvas)에 붙인다.
 /// </summary>
 [DisallowMultipleComponent]
@@ -15,7 +17,11 @@ public class GameOverUI : MonoBehaviour
     [Header("Source")]
     [SerializeField] private GameManager gameManager;
 
-    [Header("Panel")]
+    [Header("Message")]
+    [Tooltip("권장. UICanvas의 CenterMessageUI. 연결하면 아래 Game Over Panel / Message Text 대신 사용한다.")]
+    [SerializeField] private CenterMessageUI messageUI;
+
+    [Header("Panel (Message UI 미연결 시)")]
     [Tooltip("게임 오버 시에만 표시할 패널 (UICanvas/TextPanel)")]
     [SerializeField] private GameObject gameOverPanel;
     [Tooltip("UICanvas/TextPanel/Text")]
@@ -40,7 +46,7 @@ public class GameOverUI : MonoBehaviour
 
     private void Awake()
     {
-        if (gameOverPanel != null && transform.IsChildOf(gameOverPanel.transform))
+        if (messageUI == null && gameOverPanel != null && transform.IsChildOf(gameOverPanel.transform))
         {
             Debug.LogError($"{name}: GameOverUI가 숨길 패널({gameOverPanel.name}) 안에 있으면 비활성화되어 결과를 받을 수 없습니다. UICanvas 등 항상 활성인 오브젝트에 붙이세요.", this);
         }
@@ -66,10 +72,15 @@ public class GameOverUI : MonoBehaviour
     /// <summary>게임 결과를 표시한다.</summary>
     public void Show(GameResult result)
     {
-        if (messageText != null)
+        bool appendNewRecord = result.IsNewRecord && newRecordObject == null;
+        string message = appendNewRecord ? $"{gameOverMessage}\n{newRecordMessage}" : gameOverMessage;
+        if (messageUI != null)
         {
-            bool appendNewRecord = result.IsNewRecord && newRecordObject == null;
-            messageText.text = appendNewRecord ? $"{gameOverMessage}\n{newRecordMessage}" : gameOverMessage;
+            messageUI.Show(this, message);
+        }
+        else if (messageText != null)
+        {
+            messageText.text = message;
         }
         if (newRecordObject != null)
         {
@@ -83,7 +94,7 @@ public class GameOverUI : MonoBehaviour
         {
             resultBestTimeText.text = TimeFormatter.Format(result.BestTime);
         }
-        if (gameOverPanel != null)
+        if (messageUI == null && gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
         }
@@ -93,17 +104,24 @@ public class GameOverUI : MonoBehaviour
     /// <summary>결과 UI를 숨기고 초기 상태로 되돌린다.</summary>
     public void Hide()
     {
-        if (messageText != null)
-        {
-            messageText.text = gameOverMessage;
-        }
         if (newRecordObject != null)
         {
             newRecordObject.SetActive(false);
         }
-        if (gameOverPanel != null)
+        if (messageUI != null)
         {
-            gameOverPanel.SetActive(false);
+            messageUI.Hide(this); // 카운트다운 메시지 등 다른 소유자의 표시는 건드리지 않음
+        }
+        else
+        {
+            if (messageText != null)
+            {
+                messageText.text = gameOverMessage;
+            }
+            if (gameOverPanel != null)
+            {
+                gameOverPanel.SetActive(false);
+            }
         }
         IsShown = false;
     }

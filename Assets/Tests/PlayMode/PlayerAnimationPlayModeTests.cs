@@ -240,6 +240,8 @@ public class PlayerAnimationPlayModeTests
         }
         Assert.AreEqual(1, loaded);
         yield return Frames(3);
+        yield return PlaySceneTestUtil.WaitForGameStart(); // 시작 카운트다운/Stretching이 있으면 끝날 때까지 대기
+        yield return Frames(2);
     }
 
     private static PlayerAnimationController FindAnimOrIgnore()

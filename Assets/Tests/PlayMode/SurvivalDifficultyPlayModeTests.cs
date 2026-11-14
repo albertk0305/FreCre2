@@ -102,6 +102,7 @@ public class SurvivalDifficultyPlayModeTests
         yield return EditorSceneManager.LoadSceneAsyncInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
         yield return null;
         yield return null;
+        yield return PlaySceneTestUtil.WaitForGameStart(); // 시작 카운트다운이 있으면 Playing까지 대기
 
         var timer = Object.FindFirstObjectByType<SurvivalTimer>();
         var dm = Object.FindFirstObjectByType<DifficultyManager>();

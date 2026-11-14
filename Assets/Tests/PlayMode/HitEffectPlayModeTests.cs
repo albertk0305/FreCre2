@@ -181,6 +181,7 @@ public class HitEffectPlayModeTests
         SceneManager.sceneLoaded -= h;
         yield return null;
         yield return null;
+        yield return PlaySceneTestUtil.WaitForGameStart();
 
         var gm = Object.FindFirstObjectByType<GameManager>();
         var spawner = Object.FindFirstObjectByType<MissileSpawner>();
@@ -219,6 +220,7 @@ public class HitEffectPlayModeTests
         SceneManager.sceneLoaded -= h;
         yield return null;
         yield return null;
+        yield return PlaySceneTestUtil.WaitForGameStart();
         var newGm = Object.FindFirstObjectByType<GameManager>();
         Assert.AreEqual(GameState.Playing, newGm.CurrentState);
         Assert.IsNull(newGm.LastHitEffect);

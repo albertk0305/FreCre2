@@ -57,6 +57,10 @@ public class SceneNavigationPlayModeTests
         Assert.AreEqual(sceneName, SceneManager.GetActiveScene().name);
         yield return null;
         yield return null;
+        if (sceneName == SceneNavigator.PlaySceneName)
+        {
+            yield return PlaySceneTestUtil.WaitForGameStart(); // 시작 카운트다운이 있으면 Playing까지 대기
+        }
     }
 
     private static IEnumerator WaitSeconds(float seconds)

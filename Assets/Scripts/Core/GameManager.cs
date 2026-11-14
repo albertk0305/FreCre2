@@ -3,6 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// 게임의 시작/종료와 GameState를 관리한다. 세부 동작은 각 시스템에 명령만 전달한다.
+/// - 대기: startGameOnStart가 꺼져 있으면 Start()에서 PrepareReady()로 Ready 대기(타이머/생성/입력 정지) 후 StartGame() 호출을 기다린다.
 /// - 시작: 피격 상태 초기화 → 플레이어 조작 활성화 → 생존시간 초기화/측정 시작 → 미사일 생성 시작 → Playing 전환 → 이벤트
 /// - 피격: PlayerHitDetector.OnPlayerHit 수신 → (Stage 8) 피격 미사일 위치에 충돌 이펙트 1개 생성 → EndGame()
 ///   이펙트는 독립 오브젝트(선택: EffectContainer 자식)로 스스로 재생/제거되며, 실패해도 게임 오버를 막지 않는다.
@@ -40,7 +41,7 @@ public class GameManager : MonoBehaviour
     [Min(0f)] [SerializeField] private float deathResultTimeout = 3f;
 
     [Header("Start")]
-    [Tooltip("시작 UI가 없는 Stage 4에서는 씬 시작 시 자동으로 게임을 시작한다.")]
+    [Tooltip("씬 시작 시 자동으로 게임을 시작한다. 끄면 Ready에서 대기하며 StartGame() 호출(예: StartCountdownController)을 기다린다.")]
     [SerializeField] private bool startGameOnStart = true;
 
     private bool hitSubscribed;
@@ -48,6 +49,15 @@ public class GameManager : MonoBehaviour
     private float resultWaitElapsed;
 
     public GameState CurrentState { get; private set; } = GameState.Ready;
+
+    /// <summary>
+    /// 씬 시작 시 자동으로 StartGame()을 호출할지. 시작 연출(카운트다운)이 Awake에서 끄면 Start()에서 Ready 대기 상태를 만든다.
+    /// </summary>
+    public bool StartGameOnStart
+    {
+        get => startGameOnStart;
+        set => startGameOnStart = value;
+    }
 
     /// <summary>게임을 끝낸 미사일 (없으면 null).</summary>
     public Missile LastHitMissile { get; private set; }
@@ -111,6 +121,41 @@ public class GameManager : MonoBehaviour
         if (startGameOnStart)
         {
             StartGame();
+        }
+        else
+        {
+            PrepareReady();
+        }
+    }
+
+    /// <summary>
+    /// Ready 대기 상태를 확정한다: 생존시간 0초 정지, 미사일 생성 중지, 플레이어 조작/입력 차단.
+    /// Ready일 때만 동작하며 여러 번 호출해도 같다. 게임 시작은 StartGame()에서만 한다.
+    /// </summary>
+    public void PrepareReady()
+    {
+        if (CurrentState != GameState.Ready)
+        {
+            return;
+        }
+
+        ResolveReferences();
+        if (survivalTimer != null)
+        {
+            survivalTimer.StopTimer();
+            survivalTimer.ResetTimer();
+        }
+        if (missileSpawner != null)
+        {
+            missileSpawner.StopSpawning();
+        }
+        if (playerController != null)
+        {
+            playerController.SetControlEnabled(false);
+        }
+        if (inputRouter != null)
+        {
+            inputRouter.SetInputEnabled(false);
         }
     }
 

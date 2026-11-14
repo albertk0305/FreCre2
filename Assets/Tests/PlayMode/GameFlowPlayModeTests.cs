@@ -117,6 +117,7 @@ public class GameFlowPlayModeTests
 
         yield return null;
         yield return null;
+        yield return PlaySceneTestUtil.WaitForGameStart(); // 씬에 시작 카운트다운이 있으면 Playing까지 대기
         Assert.AreEqual(GameState.Playing, gm.CurrentState);
         Assert.IsTrue(spawner.IsSpawning);
         Assert.IsTrue(player.CanControl);

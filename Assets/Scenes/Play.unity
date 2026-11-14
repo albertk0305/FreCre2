@@ -179,6 +179,8 @@ GameObject:
   - component: {fileID: 56649419}
   - component: {fileID: 56649423}
   - component: {fileID: 56649424}
+  - component: {fileID: 56649425}
+  - component: {fileID: 56649426}
   m_Layer: 5
   m_Name: UICanvas
   m_TagString: Untagged
@@ -287,6 +289,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FreCre2.Runtime::GameOverUI
   gameManager: {fileID: 619571204}
+  messageUI: {fileID: 56649425}
   gameOverPanel: {fileID: 477827893}
   messageText: {fileID: 183538749}
   gameOverMessage: GAME OVER
@@ -308,6 +311,40 @@ MonoBehaviour:
   m_EditorClassIdentifier: FreCre2.Runtime::CharacterPortraitUI
   gameManager: {fileID: 619571204}
   portraitAnimator: {fileID: 747062095}
+--- !u!114 &56649425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 56649418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e876732bc063f1468ba97e0e9cdce57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::CenterMessageUI
+  panel: {fileID: 477827893}
+  messageText: {fileID: 183538749}
+--- !u!114 &56649426
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 56649418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0357fc0217949ff49868cb2c6e96a4ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::StartCountdownController
+  gameManager: {fileID: 619571204}
+  messageUI: {fileID: 56649425}
+  playerAnimation: {fileID: 1916242255}
+  countFrom: 3
+  secondsPerCount: 1
+  startMessage: START!
+  startMessageDuration: 0.6
+  autoStartOnSceneStart: 1
 --- !u!1 &98690199
 GameObject:
   m_ObjectHideFlags: 0
@@ -901,7 +938,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &462139291
 RectTransform:
   m_ObjectHideFlags: 0
@@ -975,7 +1012,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &477827894
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1046,7 +1083,7 @@ MonoBehaviour:
   hitEffectPrefab: {fileID: 2325202553521628723, guid: b64a80112991ea445a8fbf39dcbb0d1f, type: 3}
   effectContainer: {fileID: 1103469559}
   deathResultTimeout: 3
-  startGameOnStart: 1
+  startGameOnStart: 0
 --- !u!4 &619571205
 Transform:
   m_ObjectHideFlags: 0
@@ -1087,12 +1124,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FreCre2.Runtime::DifficultyManager
   survivalTimer: {fileID: 619571206}
-  initialSpawnInterval: 1.8
-  minimumSpawnInterval: 0.45
+  initialSpawnInterval: 1.2
+  minimumSpawnInterval: 0.35
   spawnIntervalDecreaseRate: 0.0125
-  initialMaxMissiles: 5
-  maximumMissiles: 14
-  missileCountIncreaseInterval: 15
+  initialMaxMissiles: 8
+  maximumMissiles: 22
+  missileCountIncreaseInterval: 10
   minMissileSpeed: 1.67
   maxMissileSpeed: 2.33
 --- !u!114 &619571208
@@ -3769,6 +3806,7 @@ MonoBehaviour:
   jumpVelocityThreshold: 0.001
   directionHysteresis: 5
   deathFallbackDuration: 2
+  stretchingFallbackDuration: 3
 --- !u!1 &2054599622
 GameObject:
   m_ObjectHideFlags: 0

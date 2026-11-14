@@ -7,6 +7,8 @@ using UnityEngine;
 /// - 방향: FacingDirection을 가장 가까운 45° 8방향으로 변환(Missile.GetDirectionIndex와 같은 규칙). Death는 방향 없음.
 /// - 목표 State가 현재 재생 중인 State와 같으면 Animator.Play()를 호출하지 않는다(매 프레임 재시작 방지).
 /// - Death State 재생이 끝나면(normalizedTime ≥ 1) OnDeathFinished를 한 번 발생시킨다.
+/// - 시작 연출: PlayStretching() 요청 후 Idle일 동안 Stretching을 1회 재생하고, 끝나면(normalizedTime ≥ 1) Idle로 돌아간다.
+///   이동/점프/사망 상태가 되면 Stretching을 즉시 끝내고 해당 상태를 재생한다.
 ///   Animator/State가 없으면 즉시, 진행이 확인되지 않으면 deathFallbackDuration 후에 발생시켜 대기가 끝나지 않는 일을 막는다.
 /// Visual의 Transform(점프 높이), Animator.speed, Root Motion, SpriteRenderer는 건드리지 않는다.
 /// PlayerController는 이 컴포넌트의 존재를 모른다.
@@ -21,11 +23,16 @@ public class PlayerAnimationController : MonoBehaviour
         Jump = 2,
         Fall = 3,
         Death = 4,
+        /// <summary>시작 연출(카운트다운). PlayStretching() 요청 시에만, Idle 대신 1회 재생.</summary>
+        Stretching = 5,
     }
 
     public const string LayerName = "Base Layer";
     /// <summary>Visual.controller에 등록된 사망 State 이름. (요청서의 DeathSouth에 해당, 정면 1방향)</summary>
     public const string DeathStateName = "Death";
+    /// <summary>Visual.controller에 등록된 시작 연출 State 이름 (정면 1방향, Loop 없음).</summary>
+    public const string StretchingStateName = "Stretching";
+    public static readonly int StretchingStateHash = Animator.StringToHash(LayerName + "." + StretchingStateName);
 
     /// <summary>Missile.Direction8 인덱스 순서(0 S, 1 SE, 2 E, 3 NE, 4 N, 5 NW, 6 W, 7 SW)의 State 이름 접미사.</summary>
     private static readonly string[] DirectionSuffixes =
@@ -57,7 +64,13 @@ public class PlayerAnimationController : MonoBehaviour
     [Tooltip("Death 재생 완료가 확인되지 않을 때 OnDeathFinished를 강제로 발생시키는 시간(초). Death 클립 길이(1초)보다 길게.")]
     [Min(0.1f)] [SerializeField] private float deathFallbackDuration = 2f;
 
+    [Header("Stretching (시작 연출)")]
+    [Tooltip("Stretching 재생 완료가 확인되지 않을 때 Idle로 넘어가는 시간(초). Stretching 클립 길이(2.125초)보다 길게.")]
+    [Min(0.1f)] [SerializeField] private float stretchingFallbackDuration = 3f;
+
     private int currentStateHash;
+    private int stretchingPlayFrame = -1;
+    private float stretchingElapsed;
     private int deathPlayFrame = -1;
     private float deathElapsed;
     private bool warnedMissingAnimator;
@@ -74,6 +87,8 @@ public class PlayerAnimationController : MonoBehaviour
     /// <summary>Animator.Play()를 요청한 횟수(같은 State 재요청이 없는지 확인용).</summary>
     public int PlayRequestCount { get; private set; }
     public bool IsDeathFinished { get; private set; }
+    /// <summary>Stretching 시작 연출이 진행 중인지. 끝나면(또는 Idle이 아닌 상태가 되면) false.</summary>
+    public bool IsPlayingStretching { get; private set; }
 
     private void Awake()
     {
@@ -119,6 +134,16 @@ public class PlayerAnimationController : MonoBehaviour
             }
         }
 
+        // 시작 연출: 서 있는(Idle) 동안만 Stretching을 유지한다. 이동/점프/사망이 생기면 즉시 원래 상태에 양보한다.
+        if (IsPlayingStretching)
+        {
+            if (state == AnimState.Idle && TickStretching(deltaTime))
+            {
+                return;
+            }
+            IsPlayingStretching = false;
+        }
+
         CurrentState = state;
         PlayIfChanged(state == AnimState.Death ? DeathStateHash : StateHashes[(int)state, (int)CurrentDirection],
             GetStateName(state, CurrentDirection));
@@ -141,6 +166,52 @@ public class PlayerAnimationController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 시작 연출 Stretching을 처음부터 1회 재생하도록 요청한다(카운트다운 시작 시). 끝나면 자동으로 Idle로 돌아간다.
+    /// 사망 상태이면 무시한다. 이미 재생 중이면 다시 시작하지 않는다.
+    /// </summary>
+    public void PlayStretching()
+    {
+        ResolveReferences();
+        if (IsPlayingStretching || (playerController != null && playerController.IsDead))
+        {
+            return;
+        }
+        IsPlayingStretching = true;
+        stretchingElapsed = 0f;
+        stretchingPlayFrame = -1;
+    }
+
+    /// <summary>Stretching을 재생/유지한다. 계속 재생 중이면 true, 끝났으면(또는 재생 불가) false.</summary>
+    private bool TickStretching(float deltaTime)
+    {
+        CurrentState = AnimState.Stretching;
+        PlayIfChanged(StretchingStateHash, StretchingStateName);
+
+        if (!CanPlay(StretchingStateHash))
+        {
+            return false; // State가 없거나 재생할 수 없으면 기다리지 않고 Idle로
+        }
+
+        stretchingElapsed += Mathf.Max(0f, deltaTime);
+        // Play() 요청은 다음 Animator 평가에 반영되므로, 요청한 다음 프레임부터 실제 State를 확인한다.
+        if (Time.frameCount > stretchingPlayFrame)
+        {
+            AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
+            if (info.fullPathHash == StretchingStateHash && info.normalizedTime >= 1f)
+            {
+                return false; // 1회 재생 완료 → Idle
+            }
+        }
+
+        if (stretchingElapsed >= stretchingFallbackDuration)
+        {
+            Debug.LogWarning($"{name}: Stretching 완료를 확인하지 못해 {stretchingFallbackDuration:0.##}초 후 Idle로 전환합니다.", this);
+            return false;
+        }
+        return true;
+    }
+
     private void PlayIfChanged(int stateHash, string stateName)
     {
         if (stateHash == currentStateHash)
@@ -156,6 +227,10 @@ public class PlayerAnimationController : MonoBehaviour
         {
             deathPlayFrame = Time.frameCount;
             deathElapsed = 0f;
+        }
+        else if (stateHash == StretchingStateHash)
+        {
+            stretchingPlayFrame = Time.frameCount;
         }
 
         if (CanPlay(stateHash))
@@ -302,6 +377,10 @@ public class PlayerAnimationController : MonoBehaviour
         if (state == AnimState.Death)
         {
             return DeathStateName;
+        }
+        if (state == AnimState.Stretching)
+        {
+            return StretchingStateName;
         }
         return LoopStatePrefixes[(int)state] + DirectionSuffixes[(int)direction];
     }
