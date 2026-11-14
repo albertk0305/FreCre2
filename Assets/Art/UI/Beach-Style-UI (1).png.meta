@@ -1,0 +1,795 @@
+fileFormatVersion: 2
+guid: a85608ccf7e85fd4993b3b273c95d014
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -36873267815846971
+    second: Beach-Style-UI (1)_0
+  - first:
+      213: 4624145161735303431
+    second: Beach-Style-UI (1)_1
+  - first:
+      213: 9042241557341418309
+    second: Beach-Style-UI (1)_2
+  - first:
+      213: 2296992553044819870
+    second: Beach-Style-UI (1)_3
+  - first:
+      213: -3929325698463430691
+    second: Beach-Style-UI (1)_4
+  - first:
+      213: 1712161158675592084
+    second: Beach-Style-UI (1)_5
+  - first:
+      213: -2655470839010169044
+    second: Beach-Style-UI (1)_6
+  - first:
+      213: 338949919662666410
+    second: Beach-Style-UI (1)_7
+  - first:
+      213: -8925407052293348032
+    second: Beach-Style-UI (1)_8
+  - first:
+      213: 6127208454687737194
+    second: Beach-Style-UI (1)_9
+  - first:
+      213: -1114057525521382358
+    second: Beach-Style-UI (1)_10
+  - first:
+      213: -4302168085945352276
+    second: Beach-Style-UI (1)_11
+  - first:
+      213: 6214623786752017032
+    second: Beach-Style-UI (1)_12
+  - first:
+      213: 1022753610258627464
+    second: Beach-Style-UI (1)_13
+  - first:
+      213: -5761658344006561818
+    second: Beach-Style-UI (1)_14
+  - first:
+      213: 5688810898516865787
+    second: Beach-Style-UI (1)_15
+  - first:
+      213: -3652002612326895184
+    second: Beach-Style-UI (1)_16
+  - first:
+      213: 1226278986292498131
+    second: Beach-Style-UI (1)_17
+  - first:
+      213: 9036561409950150247
+    second: Beach-Style-UI (1)_18
+  - first:
+      213: 2726306632106160203
+    second: Beach-Style-UI (1)_19
+  - first:
+      213: 6913215035111993511
+    second: Beach-Style-UI (1)_20
+  - first:
+      213: -5173676825366914879
+    second: Beach-Style-UI (1)_21
+  - first:
+      213: -6750309479742652700
+    second: Beach-Style-UI (1)_22
+  - first:
+      213: 7091092939989125794
+    second: Beach-Style-UI (1)_23
+  - first:
+      213: 4365788094970136962
+    second: Beach-Style-UI (1)_24
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_0
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 212
+        width: 83
+        height: 36
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5cbe02255fffc7ff0800000000000000
+      internalID: -36873267815846971
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_1
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 194
+        width: 138
+        height: 54
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 701f21b56834c2040800000000000000
+      internalID: 4624145161735303431
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_2
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 174
+        width: 81
+        height: 33
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5433c9ed9ce7c7d70800000000000000
+      internalID: 9042241557341418309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_3
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 148
+        width: 136
+        height: 35
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e9f34f79e8e80ef10800000000000000
+      internalID: 2296992553044819870
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_4
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 133
+        width: 83
+        height: 35
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd70640881b3879c0800000000000000
+      internalID: -3929325698463430691
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_5
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 85
+        width: 36
+        height: 35
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 493741d9081d2c710800000000000000
+      internalID: 1712161158675592084
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_6
+      rect:
+        serializedVersion: 2
+        x: 125
+        y: 113
+        width: 72
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2fe369575fd52bd0800000000000000
+      internalID: -2655470839010169044
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_7
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 97
+        width: 37
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa2f326f72134b400800000000000000
+      internalID: 338949919662666410
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_8
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 95
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 045e9442395922480800000000000000
+      internalID: -8925407052293348032
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_9
+      rect:
+        serializedVersion: 2
+        x: 125
+        y: 93
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a65ce6e40a7380550800000000000000
+      internalID: 6127208454687737194
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_10
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 93
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2482f345921a80f0800000000000000
+      internalID: -1114057525521382358
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_11
+      rect:
+        serializedVersion: 2
+        x: 165
+        y: 93
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: caf74317be0ab44c0800000000000000
+      internalID: -4302168085945352276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_12
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 76
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8820c065867ce3650800000000000000
+      internalID: 6214623786752017032
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_13
+      rect:
+        serializedVersion: 2
+        x: 125
+        y: 73
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88bb6306dfc813e00800000000000000
+      internalID: 1022753610258627464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_14
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 73
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6efc250434a7a00b0800000000000000
+      internalID: -5761658344006561818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_15
+      rect:
+        serializedVersion: 2
+        x: 165
+        y: 73
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf2f7702f57b2fe40800000000000000
+      internalID: 5688810898516865787
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_16
+      rect:
+        serializedVersion: 2
+        x: 186
+        y: 73
+        width: 53
+        height: 20
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b1f47529fa715dc0800000000000000
+      internalID: -3652002612326895184
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_17
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 22
+        width: 36
+        height: 35
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3de8d7dad3e940110800000000000000
+      internalID: 1226278986292498131
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_18
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 57
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 76ee41f79b0586d70800000000000000
+      internalID: 9036561409950150247
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_19
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 55
+        width: 113
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b40ba73ff69c5d520800000000000000
+      internalID: 2726306632106160203
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_20
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 38
+        width: 52
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7a07db7527ca0ff50800000000000000
+      internalID: 6913215035111993511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_21
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 38
+        width: 113
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c89551b6586338b0800000000000000
+      internalID: -5173676825366914879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_22
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 22
+        width: 52
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4eebcf7fa451252a0800000000000000
+      internalID: -6750309479742652700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_23
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 21
+        width: 59
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2aa055d657f986260800000000000000
+      internalID: 7091092939989125794
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Beach-Style-UI (1)_24
+      rect:
+        serializedVersion: 2
+        x: 189
+        y: 21
+        width: 52
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28903553425669c30800000000000000
+      internalID: 4365788094970136962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 8d0e5943cbe5c7b4ba39746fa61fdef2
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":128.0,"y":128.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      Beach-Style-UI (1)_0: -36873267815846971
+      Beach-Style-UI (1)_1: 4624145161735303431
+      Beach-Style-UI (1)_10: -1114057525521382358
+      Beach-Style-UI (1)_11: -4302168085945352276
+      Beach-Style-UI (1)_12: 6214623786752017032
+      Beach-Style-UI (1)_13: 1022753610258627464
+      Beach-Style-UI (1)_14: -5761658344006561818
+      Beach-Style-UI (1)_15: 5688810898516865787
+      Beach-Style-UI (1)_16: -3652002612326895184
+      Beach-Style-UI (1)_17: 1226278986292498131
+      Beach-Style-UI (1)_18: 9036561409950150247
+      Beach-Style-UI (1)_19: 2726306632106160203
+      Beach-Style-UI (1)_2: 9042241557341418309
+      Beach-Style-UI (1)_20: 6913215035111993511
+      Beach-Style-UI (1)_21: -5173676825366914879
+      Beach-Style-UI (1)_22: -6750309479742652700
+      Beach-Style-UI (1)_23: 7091092939989125794
+      Beach-Style-UI (1)_24: 4365788094970136962
+      Beach-Style-UI (1)_3: 2296992553044819870
+      Beach-Style-UI (1)_4: -3929325698463430691
+      Beach-Style-UI (1)_5: 1712161158675592084
+      Beach-Style-UI (1)_6: -2655470839010169044
+      Beach-Style-UI (1)_7: 338949919662666410
+      Beach-Style-UI (1)_8: -8925407052293348032
+      Beach-Style-UI (1)_9: 6127208454687737194
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
