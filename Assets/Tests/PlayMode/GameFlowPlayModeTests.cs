@@ -137,7 +137,7 @@ public class GameFlowPlayModeTests
         Assert.IsFalse(spawner.IsSpawning);
         Assert.AreEqual(1f, Time.timeScale);
 
-        // 게임 오버 상태 유지 확인: 5초(생성 간격 1.8초 이상) 동안 미사일 정지, 신규 생성 없음, 플레이어 정지
+        // 게임 오버 상태 유지 확인: 5초(초기 생성 간격보다 충분히 긴 시간) 동안 미사일 정지, 신규 생성 없음, 플레이어 정지
         var frozen = new Dictionary<Missile, Vector3>();
         foreach (var m in spawner.ActiveMissiles)
         {

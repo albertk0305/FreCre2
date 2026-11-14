@@ -70,7 +70,8 @@ public class SurvivalDifficultyPlayModeTests
         Assert.AreEqual(GameState.Playing, gm.CurrentState);
         Assert.IsTrue(timer.IsRunning);
         Assert.IsTrue(spawner.IsSpawning);
-        Assert.AreEqual(1.80f, spawner.SpawnInterval, 1e-5f);
+        // 테스트가 직접 만든 DifficultyManager(코드 기본값) 기준. 씬 밸런스와 무관한 명시적 테스트 데이터.
+        Assert.AreEqual(DifficultyManager.DefaultInitialSpawnInterval, spawner.SpawnInterval, 1e-5f);
 
         float startElapsed = timer.ElapsedTime;
         float t0 = Time.time;

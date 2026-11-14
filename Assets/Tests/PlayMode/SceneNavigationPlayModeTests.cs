@@ -8,7 +8,8 @@ using UnityEngine.TestTools;
 /// <summary>
 /// Stage 6: 실제 Main/Play 씬과 SceneManager로 씬 전환, 재시작 초기화, 최고기록 저장 정책을 검증한다.
 /// SceneManager.LoadScene(name)을 쓰므로 두 씬이 Build Profiles Scene List에 있어야 한다.
-/// 피격 위험이 없는 시간(첫 미사일 1.8초 생성 + 비행 ≥ 약 1.9초) 안에서만 진행 상태를 만든다.
+/// 피격 위험이 없는 시간(첫 미사일 생성 = 씬의 Initial Spawn Interval + 비행 ≥ 약 1.9초) 안에서만 진행 상태를 만든다.
+/// 초기 난이도는 특정 밸런스 수치가 아니라 씬의 DifficultyManager 0초 설정과 비교한다(밸런스 조정에 영향받지 않음).
 /// </summary>
 public class SceneNavigationPlayModeTests
 {
@@ -94,8 +95,15 @@ public class SceneNavigationPlayModeTests
         Assert.Less(timer.ElapsedTime, 0.2f, "생존시간 0초부터");
         Assert.IsTrue(spawner.IsSpawning);
         Assert.Less(spawner.SpawnTimer, 0.2f, "생성 타이머 초기화");
-        Assert.AreEqual(1.80f, spawner.SpawnInterval, 1e-5f, "난이도 0초 기준");
-        Assert.AreEqual(5, spawner.MaxActiveMissiles);
+
+        // 초기 난이도: 특정 밸런스 수치가 아니라 씬의 DifficultyManager 0초 설정과 일치하는지 검증한다.
+        var dm = Find<DifficultyManager>();
+        Assert.AreSame(dm, spawner.DifficultyManager, "MissileSpawner가 씬의 DifficultyManager 사용");
+        DifficultySnapshot expected = dm.GetCurrentDifficulty(0f);
+        Assert.AreEqual(dm.InitialSpawnInterval, expected.SpawnInterval, 1e-5f, "0초 생성 간격 = Initial Spawn Interval");
+        Assert.AreEqual(dm.InitialMaxMissiles, expected.MaxActiveMissiles, "0초 최대 미사일 = Initial Max Missiles");
+        Assert.AreEqual(expected.SpawnInterval, spawner.SpawnInterval, 1e-5f, "난이도 0초 기준 생성 간격 적용");
+        Assert.AreEqual(expected.MaxActiveMissiles, spawner.MaxActiveMissiles, "난이도 0초 기준 최대 미사일 적용");
         Assert.AreEqual(0, spawner.ActiveMissileCount);
         Assert.AreEqual(0, Object.FindObjectsByType<Missile>(FindObjectsSortMode.None).Length, "미사일 오브젝트 없음");
         Assert.IsFalse(player.IsDead);
@@ -146,8 +154,14 @@ public class SceneNavigationPlayModeTests
         var states = new List<GameState>();
         oldGm.OnGameStateChanged += s => states.Add(s);
 
-        yield return WaitSeconds(2.0f); // 첫 미사일 생성(1.8초) 이후, 도달 이전
-        Assert.GreaterOrEqual(Find<MissileSpawner>().ActiveMissileCount, 1, "재시작 전 미사일 존재");
+        // 첫 미사일이 실제로 생성될 때까지 기다린다(생성 간격은 씬의 DifficultyManager 설정을 따름). 생성 직후는 아직 도달 전.
+        var oldSpawner = Find<MissileSpawner>();
+        float spawnWaitLimit = Find<DifficultyManager>().InitialSpawnInterval + 1f;
+        float waitStart = Time.time;
+        while (oldSpawner.ActiveMissileCount == 0 && Time.time - waitStart < spawnWaitLimit) yield return null;
+        yield return null;
+        Assert.GreaterOrEqual(oldSpawner.ActiveMissileCount, 1, "재시작 전 미사일 존재");
+        Assert.AreEqual(GameState.Playing, oldGm.CurrentState, "미사일 도달 전 상태에서 재시작");
         Assert.IsTrue(oldPlayer.TryJump(), "재시작 직전 점프 상태");
         yield return new WaitForFixedUpdate();
         yield return new WaitForFixedUpdate();
