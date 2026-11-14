@@ -46,6 +46,8 @@ public class PlayerController : MonoBehaviour
     public Vector2 GroundPosition { get; private set; }
     /// <summary>지면에서 떠 있는 높이 (unit). Stage 4 PlayerHitDetector가 참조한다.</summary>
     public float JumpHeight { get; private set; }
+    /// <summary>Visual에 마지막으로 적용한(프레임 보간된) 표시 높이. 그림자 등 연출이 Visual과 같은 높이를 쓰도록 읽기 전용으로 제공.</summary>
+    public float VisualJumpHeight { get; private set; }
     public float VerticalVelocity { get; private set; }
     public bool IsGrounded { get; private set; } = true;
     /// <summary>마지막 점프 시작 시각 (SimulationTime 기준). 시작/리셋 시 -Infinity → 즉시 점프 가능.</summary>
@@ -273,6 +275,7 @@ public class PlayerController : MonoBehaviour
 
     private void ApplyVisualHeight(float height)
     {
+        VisualJumpHeight = height;
         if (visual != null)
         {
             visual.localPosition = visualBaseLocalPosition + new Vector3(0f, height, 0f);

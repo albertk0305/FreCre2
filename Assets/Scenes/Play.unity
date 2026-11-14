@@ -529,6 +529,7 @@ GameObject:
   m_Component:
   - component: {fileID: 159715925}
   - component: {fileID: 159715926}
+  - component: {fileID: 159715927}
   m_Layer: 0
   m_Name: Shadow
   m_TagString: Untagged
@@ -610,6 +611,24 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &159715927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 159715924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9198ae12f26eb14468fd40c7616871f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FreCre2.Runtime::PlayerShadowController
+  playerController: {fileID: 1690652016}
+  shadowRenderer: {fileID: 159715926}
+  minScale: 0.7
+  minAlphaMultiplier: 0.6
+  useControllerJumpPhysics: 1
+  fallbackMaxJumpHeight: 0.47
 --- !u!1 &164384871
 GameObject:
   m_ObjectHideFlags: 0
